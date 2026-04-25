@@ -1,7 +1,38 @@
 // Cloak / proxy settings persisted to localStorage
 import { useEffect, useState } from "react";
 
-export type ProxyProvider = "croxy" | "direct" | "duckduckgo";
+export type ProxyProvider =
+  | "croxy"
+  | "plainproxies"
+  | "hideme"
+  | "proxysite"
+  | "weboas"
+  | "blockaway"
+  | "novpn"
+  | "googletranslate"
+  | "googlecache"
+  | "duckduckgo"
+  | "direct";
+
+export interface ProxyOption {
+  id: ProxyProvider;
+  label: string;
+  desc: string;
+}
+
+export const PROXY_OPTIONS: ProxyOption[] = [
+  { id: "croxy", label: "CroxyProxy", desc: "Most reliable general-purpose web proxy." },
+  { id: "plainproxies", label: "PlainProxies", desc: "Fast UK-based web proxy." },
+  { id: "hideme", label: "Hide.me", desc: "Privacy-focused web proxy." },
+  { id: "proxysite", label: "ProxySite", desc: "Classic free proxy." },
+  { id: "weboas", label: "Weboas.is", desc: "Lightweight EU proxy." },
+  { id: "blockaway", label: "Blockaway", desc: "School-network friendly." },
+  { id: "novpn", label: "NoVPN", desc: "Simple anonymous proxy." },
+  { id: "googletranslate", label: "Google Translate", desc: "The classic bypass — works where others don't." },
+  { id: "googlecache", label: "Google Cache", desc: "Read cached snapshots of pages." },
+  { id: "duckduckgo", label: "DuckDuckGo Search", desc: "Route everything as a search query." },
+  { id: "direct", label: "Direct iframe", desc: "Fastest, but most sites refuse to embed." },
+];
 
 export interface CloakSettings {
   tabTitle: string;
@@ -61,6 +92,7 @@ export function useCloak(): [CloakSettings, (s: CloakSettings) => void] {
   return [s, (next) => { setS(next); saveCloak(next); }];
 }
 
+// Build a proxy URL for the given provider.
 export function proxify(rawUrl: string, provider: ProxyProvider = "croxy"): string {
   let url = rawUrl.trim();
   if (!url) return "";
@@ -69,13 +101,28 @@ export function proxify(rawUrl: string, provider: ProxyProvider = "croxy"): stri
     return `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
   }
   if (!/^https?:\/\//.test(url)) url = `https://${url}`;
+  const enc = encodeURIComponent(url);
+  const host = url.replace(/^https?:\/\//, "");
   switch (provider) {
-    case "direct":
-      return url;
-    case "duckduckgo":
-      return `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
+    case "direct": return url;
+    case "duckduckgo": return `https://duckduckgo.com/?q=${enc}`;
+    case "plainproxies": return `https://plainproxies.com/api/v2?url=${enc}`;
+    case "hideme": return `https://hide.me/en/proxy?u=${enc}`;
+    case "proxysite": return `https://eu1.proxysite.com/process.php?d=${enc}`;
+    case "weboas": return `https://weboas.is/?q=${enc}`;
+    case "blockaway": return `https://www.blockaway.net/browse.php?u=${enc}&b=4`;
+    case "novpn": return `https://www.novpn.net/browse.php?u=${enc}`;
+    case "googletranslate":
+      return `https://translate.google.com/translate?sl=ja&tl=en&u=${enc}`;
+    case "googlecache":
+      return `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(host)}`;
     case "croxy":
     default:
-      return `https://www.croxyproxy.com/_public/api?url=${encodeURIComponent(url)}`;
+      return `https://www.croxyproxy.com/_public/api?url=${enc}`;
   }
 }
+
+// Try a list of providers in order — caller can fall back if the iframe stays blank.
+export const PROVIDER_FALLBACK_ORDER: ProxyProvider[] = [
+  "croxy", "plainproxies", "hideme", "blockaway", "proxysite", "googletranslate", "duckduckgo",
+];
