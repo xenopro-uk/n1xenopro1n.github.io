@@ -141,3 +141,16 @@
 }
 
 .animate-float-slow { animation: float-slow 18s ease-in-out infinite; }
+
+@keyframes ripple {
+  from { transform: translate(-50%, -50%) scale(0); opacity: 0.6; }
+  to   { transform: translate(-50%, -50%) scale(20); opacity: 0; }
+}
+.bg-ripple {
+  position: absolute;
+  width: 24px; height: 24px;
+  border-radius: 9999px;
+  background: oklch(0.78 0.18 200 / 0.35);
+  pointer-events: none;
+  animation: ripple 800ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
