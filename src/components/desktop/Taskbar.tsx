@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { Wifi, Signal, Battery, Globe } from "lucide-react";
 
 export function Taskbar({ onLaunchBrowser }: { onLaunchBrowser: () => void }) {
-  const [time, setTime] = useState(new Date());
+  const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setTime(new Date());
     const id = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const t = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const d = time.toLocaleDateString([], { month: "short", day: "numeric" });
+  const t = time ? time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--";
+  const d = time ? time.toLocaleDateString([], { month: "short", day: "numeric" }) : "";
 
   return (
     <div className="pointer-events-auto absolute bottom-4 left-1/2 z-40 -translate-x-1/2">
