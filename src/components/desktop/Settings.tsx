@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Settings as SettingsIcon, Save, RotateCcw } from "lucide-react";
-import { useCloak, type ProxyProvider } from "@/lib/cloak";
+import { useCloak, type ProxyProvider, PROXY_OPTIONS } from "@/lib/cloak";
 
 const PRESETS = [
   { title: "Google", favicon: "https://www.google.com/favicon.ico" },
@@ -11,11 +11,7 @@ const PRESETS = [
   { title: "Canvas", favicon: "https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico" },
 ];
 
-const PROXIES: { id: ProxyProvider; label: string; desc: string }[] = [
-  { id: "croxy", label: "CroxyProxy", desc: "Best unblocking, may rate-limit" },
-  { id: "direct", label: "Direct iframe", desc: "Fastest, but many sites refuse to embed" },
-  { id: "duckduckgo", label: "DuckDuckGo Search", desc: "Route everything as a search query" },
-];
+const PROXIES = PROXY_OPTIONS;
 
 export function Settings() {
   const [cloak, setCloak] = useCloak();

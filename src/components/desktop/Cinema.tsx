@@ -18,21 +18,28 @@ interface TmdbItem {
 const TMDB_KEY = "8265bd1679663a7ea12ac168da84d2e8"; // public demo key shipped with TMDB tutorials
 const IMG = "https://image.tmdb.org/t/p/w300";
 
+const SOURCES = [
+  { id: "vidsrc.to",  movie: (id: number) => `https://vidsrc.to/embed/movie/${id}`,  tv: (id: number) => `https://vidsrc.to/embed/tv/${id}` },
+  { id: "vidsrc.xyz", movie: (id: number) => `https://vidsrc.xyz/embed/movie/${id}`, tv: (id: number) => `https://vidsrc.xyz/embed/tv/${id}` },
+  { id: "2embed",     movie: (id: number) => `https://www.2embed.cc/embed/${id}`,    tv: (id: number) => `https://www.2embed.cc/embedtv/${id}` },
+  { id: "embed.su",   movie: (id: number) => `https://embed.su/embed/movie/${id}`,   tv: (id: number) => `https://embed.su/embed/tv/${id}` },
+  { id: "multiembed", movie: (id: number) => `https://multiembed.mov/?video_id=${id}&tmdb=1`, tv: (id: number) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=1&e=1` },
+];
+
 export function Cinema() {
   const [mode, setMode] = useState<Mode>("movie");
   const [q, setQ] = useState("");
   const [items, setItems] = useState<TmdbItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState<TmdbItem | null>(null);
+  const [sourceIdx, setSourceIdx] = useState(0);
 
   const search = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!q.trim()) return;
     setLoading(true);
     try {
-      const r = await fetch(
-        `https://api.themoviedb.org/3/search/${mode}?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`
-      );
+      const r = await fetch(`https://api.themoviedb.org/3/search/${mode}?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`);
       const j = await r.json();
       setItems(j.results ?? []);
     } finally { setLoading(false); }
@@ -47,10 +54,10 @@ export function Cinema() {
     } finally { setLoading(false); }
   };
 
-  const embedUrl = (it: TmdbItem) =>
-    mode === "movie"
-      ? `https://vidsrc.xyz/embed/movie/${it.id}`
-      : `https://vidsrc.xyz/embed/tv/${it.id}`;
+  const embedUrl = (it: TmdbItem) => {
+    const src = SOURCES[sourceIdx];
+    return mode === "movie" ? src.movie(it.id) : src.tv(it.id);
+  };
 
   if (active) {
     return (
@@ -59,15 +66,29 @@ export function Cinema() {
           <button onClick={() => setActive(null)} className="rounded-md px-2 py-1 text-sm text-foreground/70 hover:bg-white/5">
             ← Back
           </button>
-          <span className="text-sm font-medium">{active.title || active.name}</span>
+          <span className="line-clamp-1 text-sm font-medium">{active.title || active.name}</span>
+          <div className="ml-auto flex items-center gap-1">
+            <span className="text-[10px] text-foreground/40">Source:</span>
+            {SOURCES.map((s, i) => (
+              <button key={s.id} onClick={() => setSourceIdx(i)}
+                className={`rounded px-2 py-0.5 text-[10px] ${sourceIdx === i ? "bg-white text-black" : "text-foreground/60 hover:bg-white/10"}`}>
+                {s.id}
+              </button>
+            ))}
+          </div>
         </div>
-        <iframe
+        <iframe key={`${active.id}-${sourceIdx}`}
           src={embedUrl(active)}
           className="flex-1 w-full bg-black"
           allow="autoplay; fullscreen; encrypted-media"
           allowFullScreen
+          referrerPolicy="origin"
+          sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-presentation"
           title={active.title || active.name}
         />
+        <div className="border-t border-white/10 bg-black/40 px-3 py-1.5 text-[10px] text-foreground/50">
+          If the player doesn't load, try a different source above.
+        </div>
       </div>
     );
   }
