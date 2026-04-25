@@ -18,12 +18,13 @@ export function Browser() {
   const [iframeSrc, setIframeSrc] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [cloak] = useCloak();
 
   const navigate = (url: string) => {
     if (!url) return;
     setInput(url);
     setLoading(true);
-    setIframeSrc(proxify(url));
+    setIframeSrc(proxify(url, cloak.proxy));
   };
 
   const onSubmit = (e: React.FormEvent) => {
