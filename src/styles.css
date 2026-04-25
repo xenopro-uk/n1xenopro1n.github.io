@@ -97,7 +97,11 @@
     overflow: hidden;
     background-image: var(--gradient-aurora);
     background-attachment: fixed;
+    cursor: none;
   }
+
+  *, *::before, *::after { cursor: none !important; }
+  input, textarea { cursor: text !important; }
 }
 
 @layer utilities {
