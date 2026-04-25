@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, RotateCw, Search, Shield, Lock, Globe } from "lucide-react";
+import { proxify, useCloak } from "@/lib/cloak";
 
 const QUICK_LINKS = [
   { name: "Google", url: "https://www.google.com", color: "#4285F4" },
@@ -11,20 +12,6 @@ const QUICK_LINKS = [
   { name: "Twitter / X", url: "https://x.com", color: "#1DA1F2" },
   { name: "TikTok", url: "https://www.tiktok.com", color: "#69C9D0" },
 ];
-
-// CroxyProxy public web-proxy endpoint. Note: third-party service, may rate-limit.
-const proxify = (rawUrl: string) => {
-  let url = rawUrl.trim();
-  if (!url) return "";
-  // If it looks like a search query (no dot, no protocol), DuckDuckGo it
-  const isUrl = /^https?:\/\//.test(url) || /\.[a-z]{2,}/i.test(url);
-  if (!isUrl) {
-    url = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
-  } else if (!/^https?:\/\//.test(url)) {
-    url = `https://${url}`;
-  }
-  return `https://www.croxyproxy.com/_public/api?url=${encodeURIComponent(url)}`;
-};
 
 export function Browser() {
   const [input, setInput] = useState("");
