@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 
 export type ProxyProvider =
+  | "xeno"        // our own server-side proxy (best)
   | "croxy"
   | "plainproxies"
   | "hideme"
@@ -21,7 +22,8 @@ export interface ProxyOption {
 }
 
 export const PROXY_OPTIONS: ProxyOption[] = [
-  { id: "croxy", label: "CroxyProxy", desc: "Most reliable general-purpose web proxy." },
+  { id: "xeno", label: "Xeno Proxy (recommended)", desc: "Our own server-side proxy. Strips X-Frame and CSP — works on most sites." },
+  { id: "croxy", label: "CroxyProxy", desc: "Reliable general-purpose web proxy." },
   { id: "plainproxies", label: "PlainProxies", desc: "Fast UK-based web proxy." },
   { id: "hideme", label: "Hide.me", desc: "Privacy-focused web proxy." },
   { id: "proxysite", label: "ProxySite", desc: "Classic free proxy." },
@@ -45,7 +47,7 @@ const KEY = "xenopro:cloak";
 const DEFAULTS: CloakSettings = {
   tabTitle: "XenoPro",
   faviconUrl: "",
-  proxy: "croxy",
+  proxy: "xeno",
 };
 
 export function loadCloak(): CloakSettings {
@@ -93,17 +95,23 @@ export function useCloak(): [CloakSettings, (s: CloakSettings) => void] {
 }
 
 // Build a proxy URL for the given provider.
-export function proxify(rawUrl: string, provider: ProxyProvider = "croxy"): string {
+export function proxify(rawUrl: string, provider: ProxyProvider = "xeno"): string {
   let url = rawUrl.trim();
   if (!url) return "";
   const isUrl = /^https?:\/\//.test(url) || /\.[a-z]{2,}/i.test(url);
   if (!isUrl) {
+    // Search query — wrap as DuckDuckGo HTML search through our proxy if xeno
+    if (provider === "xeno") {
+      const search = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
+      return `/api/public/proxy?url=${encodeURIComponent(search)}`;
+    }
     return `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
   }
   if (!/^https?:\/\//.test(url)) url = `https://${url}`;
   const enc = encodeURIComponent(url);
   const host = url.replace(/^https?:\/\//, "");
   switch (provider) {
+    case "xeno": return `/api/public/proxy?url=${enc}`;
     case "direct": return url;
     case "duckduckgo": return `https://duckduckgo.com/?q=${enc}`;
     case "plainproxies": return `https://plainproxies.com/api/v2?url=${enc}`;
@@ -124,5 +132,5 @@ export function proxify(rawUrl: string, provider: ProxyProvider = "croxy"): stri
 
 // Try a list of providers in order — caller can fall back if the iframe stays blank.
 export const PROVIDER_FALLBACK_ORDER: ProxyProvider[] = [
-  "croxy", "plainproxies", "hideme", "blockaway", "proxysite", "googletranslate", "duckduckgo",
+  "xeno", "croxy", "plainproxies", "hideme", "blockaway", "proxysite", "googletranslate", "duckduckgo",
 ];
