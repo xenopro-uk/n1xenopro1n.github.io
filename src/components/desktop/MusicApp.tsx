@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Music, Search, Play, Pause, SkipBack, SkipForward, Volume2 } from "lucide-react";
 
-// Deezer public search via JSONP-friendly proxy (api.deezer.com supports CORS via /search?output=jsonp,
-// but we use a public CORS bridge to keep it simple & free). 30-second previews.
+// iTunes Search API — free, no key, CORS-enabled. Returns 30s previews + artwork.
 interface Track {
-  id: number;
-  title: string;
-  duration: number;
-  preview: string;
-  artist: { name: string; picture_medium: string };
-  album: { title: string; cover_medium: string };
+  trackId: number;
+  trackName: string;
+  artistName: string;
+  collectionName?: string;
+  artworkUrl100: string;
+  previewUrl: string;
 }
 
-const SEED_QUERIES = ["top hits", "lofi", "pop", "rock", "hip hop", "edm", "jazz", "k-pop"];
+const SEED = ["top hits 2024", "lofi", "pop", "rock", "hip hop", "edm", "jazz", "k-pop"];
 
 export function MusicApp() {
   const [q, setQ] = useState("");
@@ -25,20 +24,22 @@ export function MusicApp() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    runSearch(SEED_QUERIES[Math.floor(Math.random() * SEED_QUERIES.length)]);
+    runSearch(SEED[Math.floor(Math.random() * SEED.length)]);
   }, []);
 
   const runSearch = async (query: string) => {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      // corsproxy.io is a free open CORS proxy
-      const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=40`)}`;
+      const url = `https://itunes.apple.com/search?media=music&limit=40&term=${encodeURIComponent(query)}`;
       const r = await fetch(url);
       const j = await r.json();
-      setTracks(j.data ?? []);
-    } catch { setTracks([]); }
-    finally { setLoading(false); }
+      setTracks((j.results ?? []).filter((t: Track) => t.previewUrl));
+    } catch {
+      setTracks([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const play = (t: Track) => {
@@ -46,23 +47,26 @@ export function MusicApp() {
     setTimeout(() => {
       const a = audioRef.current;
       if (!a) return;
-      a.src = t.preview;
+      a.src = t.previewUrl;
       a.volume = vol;
       a.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     }, 0);
   };
 
   const toggle = () => {
-    const a = audioRef.current; if (!a || !current) return;
+    const a = audioRef.current;
+    if (!a || !current) return;
     if (a.paused) { a.play(); setPlaying(true); } else { a.pause(); setPlaying(false); }
   };
 
   const skip = (dir: 1 | -1) => {
     if (!current) return;
-    const i = tracks.findIndex(t => t.id === current.id);
+    const i = tracks.findIndex((t) => t.trackId === current.trackId);
     const next = tracks[(i + dir + tracks.length) % tracks.length];
     if (next) play(next);
   };
+
+  const cover = (t: Track) => t.artworkUrl100.replace("100x100", "300x300");
 
   return (
     <div className="flex h-full flex-col bg-background/40">
@@ -86,16 +90,16 @@ export function MusicApp() {
         {loading && <div className="text-center text-xs text-foreground/40">Loading…</div>}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {tracks.map((t) => (
-            <button key={t.id} onClick={() => play(t)}
+            <button key={t.trackId} onClick={() => play(t)}
               className="group flex flex-col gap-2 rounded-xl bg-white/[0.04] p-2 text-left ring-1 ring-white/5 transition hover:bg-white/10">
               <div className="relative aspect-square overflow-hidden rounded-lg">
-                <img src={t.album.cover_medium} alt="" className="h-full w-full object-cover" loading="lazy" />
+                <img src={cover(t)} alt="" className="h-full w-full object-cover" loading="lazy" />
                 <div className="absolute inset-0 grid place-items-center bg-black/40 opacity-0 transition group-hover:opacity-100">
                   <Play className="h-8 w-8 fill-white" />
                 </div>
               </div>
-              <div className="line-clamp-1 text-xs font-medium">{t.title}</div>
-              <div className="line-clamp-1 text-[10px] text-foreground/50">{t.artist.name}</div>
+              <div className="line-clamp-1 text-xs font-medium">{t.trackName}</div>
+              <div className="line-clamp-1 text-[10px] text-foreground/50">{t.artistName}</div>
             </button>
           ))}
         </div>
@@ -107,10 +111,10 @@ export function MusicApp() {
       {current && (
         <div className="border-t border-white/10 bg-black/40 p-3 backdrop-blur">
           <div className="flex items-center gap-3">
-            <img src={current.album.cover_medium} alt="" className="h-12 w-12 rounded object-cover" />
+            <img src={cover(current)} alt="" className="h-12 w-12 rounded object-cover" />
             <div className="min-w-0 flex-1">
-              <div className="line-clamp-1 text-xs font-medium">{current.title}</div>
-              <div className="line-clamp-1 text-[10px] text-foreground/50">{current.artist.name}</div>
+              <div className="line-clamp-1 text-xs font-medium">{current.trackName}</div>
+              <div className="line-clamp-1 text-[10px] text-foreground/50">{current.artistName}</div>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => skip(-1)} className="rounded p-1.5 hover:bg-white/10"><SkipBack className="h-4 w-4" /></button>
@@ -129,7 +133,7 @@ export function MusicApp() {
           <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/10">
             <div className="h-full bg-white transition-[width]" style={{ width: `${progress * 100}%` }} />
           </div>
-          <p className="mt-1 text-[10px] text-foreground/40">30-second previews from Deezer · free, no account required</p>
+          <p className="mt-1 text-[10px] text-foreground/40">30-second previews · iTunes · free, no account</p>
           <audio
             ref={audioRef}
             onTimeUpdate={(e) => { const a = e.currentTarget; setProgress(a.duration ? a.currentTime / a.duration : 0); }}

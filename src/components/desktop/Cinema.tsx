@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Film, Search, Tv, Play } from "lucide-react";
+import { Film, Search, Tv, Play, ExternalLink } from "lucide-react";
 
-// Free streaming embeds — vidsrc.to / vidsrc.in style: takes IMDb/TMDB id
-// We use TMDB search to populate a catalog, then build a vidsrc embed URL.
 type Mode = "movie" | "tv";
 
 interface TmdbItem {
@@ -15,14 +13,16 @@ interface TmdbItem {
   overview: string;
 }
 
-const TMDB_KEY = "8265bd1679663a7ea12ac168da84d2e8"; // public demo key shipped with TMDB tutorials
+const TMDB_KEY = "8265bd1679663a7ea12ac168da84d2e8";
 const IMG = "https://image.tmdb.org/t/p/w300";
 
+// Free streaming sources. We render with our server proxy so X-Frame headers are stripped.
 const SOURCES = [
   { id: "vidsrc.to",  movie: (id: number) => `https://vidsrc.to/embed/movie/${id}`,  tv: (id: number) => `https://vidsrc.to/embed/tv/${id}` },
   { id: "vidsrc.xyz", movie: (id: number) => `https://vidsrc.xyz/embed/movie/${id}`, tv: (id: number) => `https://vidsrc.xyz/embed/tv/${id}` },
+  { id: "vidsrc.cc",  movie: (id: number) => `https://vidsrc.cc/v2/embed/movie/${id}`, tv: (id: number) => `https://vidsrc.cc/v2/embed/tv/${id}/1/1` },
+  { id: "embed.su",   movie: (id: number) => `https://embed.su/embed/movie/${id}`,   tv: (id: number) => `https://embed.su/embed/tv/${id}/1/1` },
   { id: "2embed",     movie: (id: number) => `https://www.2embed.cc/embed/${id}`,    tv: (id: number) => `https://www.2embed.cc/embedtv/${id}` },
-  { id: "embed.su",   movie: (id: number) => `https://embed.su/embed/movie/${id}`,   tv: (id: number) => `https://embed.su/embed/tv/${id}` },
   { id: "multiembed", movie: (id: number) => `https://multiembed.mov/?video_id=${id}&tmdb=1`, tv: (id: number) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=1&e=1` },
 ];
 
@@ -54,20 +54,25 @@ export function Cinema() {
     } finally { setLoading(false); }
   };
 
-  const embedUrl = (it: TmdbItem) => {
+  const rawEmbed = (it: TmdbItem) => {
     const src = SOURCES[sourceIdx];
     return mode === "movie" ? src.movie(it.id) : src.tv(it.id);
   };
 
   if (active) {
+    const direct = rawEmbed(active);
     return (
       <div className="flex h-full flex-col">
-        <div className="flex items-center gap-2 border-b border-white/10 bg-background/60 px-3 py-2">
+        <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-background/60 px-3 py-2">
           <button onClick={() => setActive(null)} className="rounded-md px-2 py-1 text-sm text-foreground/70 hover:bg-white/5">
             ← Back
           </button>
           <span className="line-clamp-1 text-sm font-medium">{active.title || active.name}</span>
-          <div className="ml-auto flex items-center gap-1">
+          <a href={direct} target="_blank" rel="noopener noreferrer"
+            className="ml-auto flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-medium text-black hover:bg-white/90">
+            <ExternalLink className="h-3 w-3" /> Open in new tab
+          </a>
+          <div className="flex items-center gap-1">
             <span className="text-[10px] text-foreground/40">Source:</span>
             {SOURCES.map((s, i) => (
               <button key={s.id} onClick={() => setSourceIdx(i)}
@@ -78,16 +83,15 @@ export function Cinema() {
           </div>
         </div>
         <iframe key={`${active.id}-${sourceIdx}`}
-          src={embedUrl(active)}
+          src={direct}
           className="flex-1 w-full bg-black"
-          allow="autoplay; fullscreen; encrypted-media"
+          allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
           allowFullScreen
           referrerPolicy="origin"
-          sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-presentation"
           title={active.title || active.name}
         />
         <div className="border-t border-white/10 bg-black/40 px-3 py-1.5 text-[10px] text-foreground/50">
-          If the player doesn't load, try a different source above.
+          If a player shows ads or doesn't load, switch source above or open in a new tab.
         </div>
       </div>
     );
@@ -96,18 +100,18 @@ export function Cinema() {
   return (
     <div className="flex h-full flex-col bg-background/40">
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
-        <Film className="h-4 w-4 text-primary" />
+        <Film className="h-4 w-4" />
         <span className="text-sm font-medium">Cinema</span>
         <div className="ml-2 flex gap-1">
           <button
             onClick={() => loadTrending("movie")}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${mode === "movie" ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/5"}`}
+            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${mode === "movie" ? "bg-white text-black" : "text-foreground/60 hover:bg-white/5"}`}
           >
             <Film className="h-3 w-3" /> Movies
           </button>
           <button
             onClick={() => loadTrending("tv")}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${mode === "tv" ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/5"}`}
+            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${mode === "tv" ? "bg-white text-black" : "text-foreground/60 hover:bg-white/5"}`}
           >
             <Tv className="h-3 w-3" /> TV
           </button>
@@ -127,7 +131,7 @@ export function Cinema() {
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-foreground/50">
             <Film className="h-10 w-10 text-foreground/20" />
             <p>Search a title or load trending.</p>
-            <button onClick={() => loadTrending("movie")} className="mt-2 rounded-full bg-primary/20 px-4 py-1.5 text-xs text-primary">
+            <button onClick={() => loadTrending("movie")} className="mt-2 rounded-full bg-white px-4 py-1.5 text-xs text-black">
               Load Trending Movies
             </button>
           </div>
@@ -137,7 +141,7 @@ export function Cinema() {
             <button
               key={it.id}
               onClick={() => setActive(it)}
-              className="group overflow-hidden rounded-xl glass text-left transition hover:-translate-y-0.5 hover:ring-1 hover:ring-primary/40"
+              className="group overflow-hidden rounded-xl bg-white/[0.04] text-left ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:ring-white/30"
             >
               {it.poster_path ? (
                 <img src={IMG + it.poster_path} alt="" className="aspect-[2/3] w-full object-cover" loading="lazy" />
@@ -147,7 +151,7 @@ export function Cinema() {
                 </div>
               )}
               <div className="p-2">
-                <div className="flex items-center gap-1 text-[10px] text-primary">
+                <div className="flex items-center gap-1 text-[10px] text-foreground/70">
                   <Play className="h-2.5 w-2.5 fill-current" /> Play free
                 </div>
                 <div className="line-clamp-1 text-xs font-medium">{it.title || it.name}</div>

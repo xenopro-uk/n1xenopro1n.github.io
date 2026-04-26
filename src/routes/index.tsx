@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import {
-  Globe, Gamepad2, Sparkles, MessageCircle, Newspaper,
-  Settings as SettingsIcon, Film, Music, Calculator as CalcIcon,
+  Globe, Gamepad2, Sparkles, Newspaper,
+  Settings as SettingsIcon, Film, Music, Calculator as CalcIcon, LogOut,
 } from "lucide-react";
 import { AppIcon } from "@/components/desktop/AppIcon";
 import { Window } from "@/components/desktop/Window";
@@ -16,8 +16,8 @@ import { AI } from "@/components/desktop/AI";
 import { Settings } from "@/components/desktop/Settings";
 import { Calculator } from "@/components/desktop/Calculator";
 import { MusicApp } from "@/components/desktop/MusicApp";
-import { Messenger } from "@/components/desktop/Messenger";
 import { useCloak } from "@/lib/cloak";
+import { isAuthed, clearAuthed } from "@/lib/auth-gate";
 
 export const Route = createFileRoute("/")({
   component: Desktop,
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-type AppId = "browser" | "ai" | "games" | "social" | "news" | "settings" | "cinema" | "music" | "calc";
+type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc";
 
 interface AppDef { id: AppId; label: string; icon: typeof Globe; }
 
@@ -41,16 +41,26 @@ const APPS: AppDef[] = [
   { id: "games",    label: "Arcade",    icon: Gamepad2 },
   { id: "cinema",   label: "Cinema",    icon: Film },
   { id: "music",    label: "Sonic",     icon: Music },
-  { id: "social",   label: "Pulse",     icon: MessageCircle },
   { id: "news",     label: "Wire",      icon: Newspaper },
   { id: "calc",     label: "Calc",      icon: CalcIcon },
   { id: "settings", label: "Cloak",     icon: SettingsIcon },
 ];
 
 function Desktop() {
+  const navigate = useNavigate();
   const [openApp, setOpenApp] = useState<AppId | null>(null);
   const [cloak] = useCloak();
   const bgRef = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+
+  // Auth gate (client-only — gate is a UI feature, not real security)
+  useEffect(() => {
+    if (!isAuthed()) {
+      navigate({ to: "/login" });
+    } else {
+      setReady(true);
+    }
+  }, [navigate]);
 
   const handleBgClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;
@@ -62,14 +72,21 @@ function Desktop() {
     setTimeout(() => ripple.remove(), 700);
   };
 
+  const signOut = () => {
+    clearAuthed();
+    navigate({ to: "/login" });
+  };
+
   const brand = cloak.tabTitle || "XenoPro";
+
+  if (!ready) return null;
 
   return (
     <div ref={bgRef} onClick={handleBgClick}
       className="relative h-screen w-screen overflow-hidden">
       <DotCursor />
 
-      {/* Soft mono haze (one orb only — saves CPU) */}
+      {/* Soft mono haze */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-32 top-10 h-[28rem] w-[28rem] rounded-full bg-white/[0.04] blur-3xl" />
         <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-white/[0.03] blur-3xl" />
@@ -86,6 +103,14 @@ function Desktop() {
           </div>
         </div>
       </div>
+
+      {/* Sign out (top-right) */}
+      <button
+        onClick={signOut}
+        className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs text-foreground/70 ring-1 ring-white/10 hover:bg-white/10 hover:text-foreground"
+      >
+        <LogOut className="h-3 w-3" /> Sign out
+      </button>
 
       {/* App grid */}
       <div className="relative z-10 grid max-h-[calc(100vh-6rem)] w-fit grid-cols-2 gap-1 p-4 sm:p-6">
@@ -106,7 +131,6 @@ function Desktop() {
           {openApp === "cinema" && <Cinema />}
           {openApp === "news" && <News />}
           {openApp === "music" && <MusicApp />}
-          {openApp === "social" && <Messenger />}
           {openApp === "calc" && <Calculator />}
           {openApp === "settings" && <Settings />}
         </Window>
