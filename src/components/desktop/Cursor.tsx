@@ -23,7 +23,7 @@ export function DotCursor() {
   return (
     <div
       ref={dotRef}
-      className="pointer-events-none fixed left-0 top-0 z-[100] h-2 w-2 rounded-full bg-white mix-blend-difference"
+      className="pointer-events-none fixed left-0 top-0 z-[9999] h-2 w-2 rounded-full bg-white mix-blend-difference"
       style={{ opacity: visible ? 1 : 0, transition: "opacity .2s" }}
     />
   );
