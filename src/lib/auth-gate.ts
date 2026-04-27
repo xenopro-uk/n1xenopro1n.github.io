@@ -1,10 +1,10 @@
-// Tiny client-side gate (school-style fake login).
-// Two valid sets of creds:
+// School-style entry gate. Three valid sets of creds:
 //   1. Student demo:  xenopro / xenobestwebsite
 //   2. Dev override:  xenoprosites@krisgmail.com / xenoysenpai12290himbest
-// The dev set also flags the session as "dev" so the admin panel unlocks.
+//   3. Guest:         no creds — auto-granted "guest" mode after the gate is unlocked once
 const KEY = "xenopro:auth";
 const DEV_KEY = "xenopro:dev";
+const GUEST_KEY = "xenopro:guest";
 
 export const STUDENT_EMAIL = "xenopro";
 export const STUDENT_PASSWORD = "xenobestwebsite";
@@ -22,14 +22,22 @@ export function isDevGate(): boolean {
   return sessionStorage.getItem(DEV_KEY) === "ok";
 }
 
-export function setAuthed(dev = false) {
+export function isGuest(): boolean {
+  if (typeof window === "undefined") return false;
+  return sessionStorage.getItem(GUEST_KEY) === "ok";
+}
+
+export function setAuthed(dev = false, guest = false) {
   sessionStorage.setItem(KEY, "ok");
   if (dev) sessionStorage.setItem(DEV_KEY, "ok");
+  if (guest) sessionStorage.setItem(GUEST_KEY, "ok");
+  else sessionStorage.removeItem(GUEST_KEY);
 }
 
 export function clearAuthed() {
   sessionStorage.removeItem(KEY);
   sessionStorage.removeItem(DEV_KEY);
+  sessionStorage.removeItem(GUEST_KEY);
 }
 
 /** Validate creds. Returns "dev" | "student" | null. */
