@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { Film, Search, Tv, Play, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Film, Search, Tv, Play, ExternalLink, AlertTriangle, History } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAccount } from "@/lib/account";
+
+const WARN_KEY = "xenopro:cinema-warned";
 
 type Mode = "movie" | "tv";
 
@@ -27,12 +31,60 @@ const SOURCES = [
 ];
 
 export function Cinema() {
+  const { user } = useAccount();
   const [mode, setMode] = useState<Mode>("movie");
   const [q, setQ] = useState("");
   const [items, setItems] = useState<TmdbItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState<TmdbItem | null>(null);
   const [sourceIdx, setSourceIdx] = useState(0);
+  const [warned, setWarned] = useState(() =>
+    typeof window !== "undefined" && localStorage.getItem(WARN_KEY) === "ok");
+  const [recent, setRecent] = useState<TmdbItem[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("recently_watched").select("*").eq("user_id", user.id)
+      .order("watched_at", { ascending: false }).limit(12)
+      .then(({ data }) => {
+        if (!data) return;
+        setRecent(data.map((r) => ({
+          id: Number(r.media_id), title: r.title, name: r.title,
+          poster_path: r.poster?.replace(IMG, "") ?? "", overview: "",
+        })));
+      });
+  }, [user]);
+
+  useEffect(() => {
+    if (!active || !user) return;
+    supabase.from("recently_watched").upsert({
+      user_id: user.id,
+      media_type: mode,
+      media_id: String(active.id),
+      title: active.title || active.name || "",
+      poster: active.poster_path ? IMG + active.poster_path : null,
+      watched_at: new Date().toISOString(),
+    }, { onConflict: "user_id,media_type,media_id" }).then(() => {});
+  }, [active, mode, user]);
+
+  if (!warned) {
+    return (
+      <div className="grid h-full place-items-center bg-background/40 p-6">
+        <div className="max-w-md rounded-2xl border border-yellow-500/30 bg-yellow-500/5 p-6 text-center">
+          <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-yellow-400" />
+          <h2 className="text-lg font-semibold">Third-party content warning</h2>
+          <p className="mt-2 text-sm text-foreground/70">
+            Movies and shows stream from third-party hosts that XenoPro does not control or moderate.
+            Players may show ads, popups, or adult content. Use an ad-blocker. Quality and uptime are not guaranteed.
+          </p>
+          <button onClick={() => { localStorage.setItem(WARN_KEY, "ok"); setWarned(true); }}
+            className="mt-5 rounded-lg bg-white px-5 py-2 text-sm font-medium text-black hover:bg-white/90">
+            I understand, continue
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const search = async (e?: React.FormEvent) => {
     e?.preventDefault();
