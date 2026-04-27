@@ -1,5 +1,5 @@
 // Optional Lovable Cloud account layer (real signup/signin so users can save settings,
-// and so the dev account can post broadcasts / ban users).
+// post broadcasts / ban users, and log AI conversations).
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +20,6 @@ export function useAccount() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listener FIRST, then fetch session (avoids deadlocks)
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
@@ -58,4 +57,9 @@ export async function signIn(email: string, password: string) {
 }
 export async function signOut() {
   return supabase.auth.signOut();
+}
+export async function resetPassword(email: string) {
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
 }

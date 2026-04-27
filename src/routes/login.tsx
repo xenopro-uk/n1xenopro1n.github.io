@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { GraduationCap, Lock, Mail, ArrowRight, BookOpen } from "lucide-react";
+import { GraduationCap, Lock, Mail, ArrowRight, BookOpen, KeyRound, UserCheck } from "lucide-react";
 import { setAuthed, checkCreds } from "@/lib/auth-gate";
+import { resetPassword } from "@/lib/account";
 import { DotCursor } from "@/components/desktop/Cursor";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
     meta: [
-      { title: "Student Portal — Sign in" },
+      { title: "Northridge Unified — Student Sign-in" },
       { name: "description", content: "District student & staff sign-in portal." },
     ],
   }),
@@ -20,6 +22,8 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,15 +31,30 @@ function LoginPage() {
     const role = checkCreds(email, password);
     if (!role) { setErr("Invalid student ID or password."); return; }
     setBusy(true);
-    setAuthed(role === "dev");
+    setAuthed(role === "dev", false);
     setTimeout(() => navigate({ to: "/loading" }), 250);
+  };
+
+  const continueAsGuest = () => {
+    setAuthed(false, true);
+    navigate({ to: "/loading" });
+  };
+
+  const sendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    const { error } = await resetPassword(forgotEmail);
+    if (error) toast.error(error.message);
+    else toast.success("Reset link sent. Check your email.");
+    setForgotOpen(false);
+    setForgotEmail("");
   };
 
   return (
     <div className="grid min-h-screen grid-cols-1 bg-background text-foreground md:grid-cols-2">
       <DotCursor />
 
-      {/* Left brand panel — school theme */}
+      {/* Left brand panel — school theme only */}
       <div className="relative hidden flex-col justify-between overflow-hidden border-r border-white/10 bg-[#0a0a0a] p-10 md:flex">
         <div className="flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-lg bg-white text-black">
@@ -125,6 +144,34 @@ function LoginPage() {
               {busy ? "Signing in…" : "Sign in"}
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </button>
+
+            <div className="flex items-center justify-between text-[11px]">
+              <button type="button" onClick={() => setForgotOpen((v) => !v)}
+                className="flex items-center gap-1 text-foreground/50 hover:text-foreground">
+                <KeyRound className="h-3 w-3" /> Forgot password?
+              </button>
+              <button type="button" onClick={continueAsGuest}
+                className="flex items-center gap-1 text-foreground/50 hover:text-foreground">
+                <UserCheck className="h-3 w-3" /> Continue as guest
+              </button>
+            </div>
+
+            {forgotOpen && (
+              <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                <div className="mb-2 text-[11px] text-foreground/60">
+                  Enter the email tied to your account. We'll send a password reset link.
+                </div>
+                <div className="flex gap-2">
+                  <input value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
+                    type="email" placeholder="you@example.com"
+                    className="flex-1 rounded-md bg-white/5 px-2 py-1.5 text-xs outline-none ring-1 ring-white/10 focus:ring-white/30" />
+                  <button onClick={sendReset}
+                    className="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-black hover:bg-white/90">
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 flex items-center gap-3 text-[10px] text-foreground/40">
