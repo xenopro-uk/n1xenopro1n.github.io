@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bans: {
         Row: {
           banned_by: string | null
@@ -68,6 +95,24 @@ export type Database = {
         }
         Relationships: []
       }
+      presence: {
+        Row: {
+          display_name: string | null
+          last_seen: string
+          user_id: string
+        }
+        Insert: {
+          display_name?: string | null
+          last_seen?: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string | null
+          last_seen?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           cloak_icon: string | null
@@ -101,6 +146,36 @@ export type Database = {
         }
         Relationships: []
       }
+      recently_watched: {
+        Row: {
+          id: string
+          media_id: string
+          media_type: string
+          poster: string | null
+          title: string
+          user_id: string
+          watched_at: string
+        }
+        Insert: {
+          id?: string
+          media_id: string
+          media_type: string
+          poster?: string | null
+          title: string
+          user_id: string
+          watched_at?: string
+        }
+        Update: {
+          id?: string
+          media_id?: string
+          media_type?: string
+          poster?: string | null
+          title?: string
+          user_id?: string
+          watched_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -118,6 +193,30 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallpapers: {
+        Row: {
+          kind: string
+          loop: boolean
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          kind?: string
+          loop?: boolean
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          kind?: string
+          loop?: boolean
+          updated_at?: string
+          url?: string
           user_id?: string
         }
         Relationships: []

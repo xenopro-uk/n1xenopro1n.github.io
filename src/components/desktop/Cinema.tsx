@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { Film, Search, Tv, Play, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Film, Search, Tv, Play, ExternalLink, AlertTriangle, History } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAccount } from "@/lib/account";
+
+const WARN_KEY = "xenopro:cinema-warned";
 
 type Mode = "movie" | "tv";
 
@@ -27,12 +31,60 @@ const SOURCES = [
 ];
 
 export function Cinema() {
+  const { user } = useAccount();
   const [mode, setMode] = useState<Mode>("movie");
   const [q, setQ] = useState("");
   const [items, setItems] = useState<TmdbItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState<TmdbItem | null>(null);
   const [sourceIdx, setSourceIdx] = useState(0);
+  const [warned, setWarned] = useState(() =>
+    typeof window !== "undefined" && localStorage.getItem(WARN_KEY) === "ok");
+  const [recent, setRecent] = useState<TmdbItem[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("recently_watched").select("*").eq("user_id", user.id)
+      .order("watched_at", { ascending: false }).limit(12)
+      .then(({ data }) => {
+        if (!data) return;
+        setRecent(data.map((r) => ({
+          id: Number(r.media_id), title: r.title, name: r.title,
+          poster_path: r.poster?.replace(IMG, "") ?? "", overview: "",
+        })));
+      });
+  }, [user]);
+
+  useEffect(() => {
+    if (!active || !user) return;
+    supabase.from("recently_watched").upsert({
+      user_id: user.id,
+      media_type: mode,
+      media_id: String(active.id),
+      title: active.title || active.name || "",
+      poster: active.poster_path ? IMG + active.poster_path : null,
+      watched_at: new Date().toISOString(),
+    }, { onConflict: "user_id,media_type,media_id" }).then(() => {});
+  }, [active, mode, user]);
+
+  if (!warned) {
+    return (
+      <div className="grid h-full place-items-center bg-background/40 p-6">
+        <div className="max-w-md rounded-2xl border border-yellow-500/30 bg-yellow-500/5 p-6 text-center">
+          <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-yellow-400" />
+          <h2 className="text-lg font-semibold">Third-party content warning</h2>
+          <p className="mt-2 text-sm text-foreground/70">
+            Movies and shows stream from third-party hosts that XenoPro does not control or moderate.
+            Players may show ads, popups, or adult content. Use an ad-blocker. Quality and uptime are not guaranteed.
+          </p>
+          <button onClick={() => { localStorage.setItem(WARN_KEY, "ok"); setWarned(true); }}
+            className="mt-5 rounded-lg bg-white px-5 py-2 text-sm font-medium text-black hover:bg-white/90">
+            I understand, continue
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const search = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -128,12 +180,36 @@ export function Cinema() {
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
         {items.length === 0 && !loading && (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-foreground/50">
-            <Film className="h-10 w-10 text-foreground/20" />
-            <p>Search a title or load trending.</p>
-            <button onClick={() => loadTrending("movie")} className="mt-2 rounded-full bg-white px-4 py-1.5 text-xs text-black">
-              Load Trending Movies
-            </button>
+          <div className="flex h-full flex-col gap-4">
+            {recent.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-foreground/50">
+                  <History className="h-3 w-3" /> Recently watched
+                </div>
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+                  {recent.map((it) => (
+                    <button key={it.id} onClick={() => setActive(it)}
+                      className="group overflow-hidden rounded-xl bg-white/[0.04] text-left ring-1 ring-white/5 hover:ring-white/30">
+                      {it.poster_path ? (
+                        <img src={IMG + it.poster_path} alt="" className="aspect-[2/3] w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="flex aspect-[2/3] items-center justify-center bg-white/5 text-foreground/30">
+                          <Film className="h-6 w-6" />
+                        </div>
+                      )}
+                      <div className="line-clamp-1 p-1.5 text-[10px]">{it.title || it.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-foreground/50">
+              <Film className="h-10 w-10 text-foreground/20" />
+              <p>Search a title or load trending.</p>
+              <button onClick={() => loadTrending("movie")} className="mt-2 rounded-full bg-white px-4 py-1.5 text-xs text-black">
+                Load Trending Movies
+              </button>
+            </div>
           </div>
         )}
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
