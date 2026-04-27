@@ -180,12 +180,36 @@ export function Cinema() {
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
         {items.length === 0 && !loading && (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-foreground/50">
-            <Film className="h-10 w-10 text-foreground/20" />
-            <p>Search a title or load trending.</p>
-            <button onClick={() => loadTrending("movie")} className="mt-2 rounded-full bg-white px-4 py-1.5 text-xs text-black">
-              Load Trending Movies
-            </button>
+          <div className="flex h-full flex-col gap-4">
+            {recent.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-foreground/50">
+                  <History className="h-3 w-3" /> Recently watched
+                </div>
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+                  {recent.map((it) => (
+                    <button key={it.id} onClick={() => setActive(it)}
+                      className="group overflow-hidden rounded-xl bg-white/[0.04] text-left ring-1 ring-white/5 hover:ring-white/30">
+                      {it.poster_path ? (
+                        <img src={IMG + it.poster_path} alt="" className="aspect-[2/3] w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="flex aspect-[2/3] items-center justify-center bg-white/5 text-foreground/30">
+                          <Film className="h-6 w-6" />
+                        </div>
+                      )}
+                      <div className="line-clamp-1 p-1.5 text-[10px]">{it.title || it.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-foreground/50">
+              <Film className="h-10 w-10 text-foreground/20" />
+              <p>Search a title or load trending.</p>
+              <button onClick={() => loadTrending("movie")} className="mt-2 rounded-full bg-white px-4 py-1.5 text-xs text-black">
+                Load Trending Movies
+              </button>
+            </div>
           </div>
         )}
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
