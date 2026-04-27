@@ -20,6 +20,7 @@ import { MusicApp } from "@/components/desktop/MusicApp";
 import { AdminPanel } from "@/components/desktop/AdminPanel";
 import { AccountMenu } from "@/components/desktop/AccountMenu";
 import { BroadcastBanner } from "@/components/desktop/BroadcastBanner";
+import { HUD } from "@/components/desktop/HUD";
 import { useCloak } from "@/lib/cloak";
 import { isAuthed, isDevGate, clearAuthed } from "@/lib/auth-gate";
 import { useAccount } from "@/lib/account";
@@ -29,8 +30,8 @@ export const Route = createFileRoute("/")({
   component: Desktop,
   head: () => ({
     meta: [
-      { title: "XenoPro — Unblocked Proxy Desktop" },
-      { name: "description", content: "XenoPro: monochrome desktop with unblocked proxy browser, free games, music, AI, news and movies." },
+      { title: "XenoPro" },
+      { name: "description", content: "XenoPro desktop." },
     ],
   }),
 });
@@ -39,15 +40,15 @@ type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "musi
 interface AppDef { id: AppId; label: string; icon: typeof Globe; devOnly?: boolean }
 
 const APPS: AppDef[] = [
-  { id: "browser",  label: "Proxy",     icon: Globe },
-  { id: "ai",       label: "Xeno AI",   icon: Sparkles },
-  { id: "games",    label: "Arcade",    icon: Gamepad2 },
-  { id: "cinema",   label: "Cinema",    icon: Film },
-  { id: "music",    label: "Sonic",     icon: Music },
-  { id: "news",     label: "Wire",      icon: Newspaper },
-  { id: "calc",     label: "Calc",      icon: CalcIcon },
-  { id: "settings", label: "Cloak",     icon: SettingsIcon },
-  { id: "admin",    label: "Dev",       icon: Shield, devOnly: true },
+  { id: "browser",  label: "Xeno's Proxy",    icon: Globe },
+  { id: "ai",       label: "Xeno's AI",       icon: Sparkles },
+  { id: "games",    label: "Xeno's Arcade",   icon: Gamepad2 },
+  { id: "cinema",   label: "Xeno's Cinema",   icon: Film },
+  { id: "music",    label: "Xeno's Sonic",    icon: Music },
+  { id: "news",     label: "Xeno's Wire",     icon: Newspaper },
+  { id: "calc",     label: "Xeno's Calc",     icon: CalcIcon },
+  { id: "settings", label: "Xeno's Cloak",    icon: SettingsIcon },
+  { id: "admin",    label: "Xeno's Dev",      icon: Shield, devOnly: true },
 ];
 
 function Desktop() {
@@ -66,7 +67,6 @@ function Desktop() {
     setReady(true);
   }, [navigate]);
 
-  // Ban check for signed-in users
   useEffect(() => {
     if (!user) { setBanned(null); return; }
     supabase.from("bans").select("reason").eq("user_id", user.id).maybeSingle()
@@ -110,6 +110,7 @@ function Desktop() {
       className="relative h-screen w-screen overflow-hidden">
       <DotCursor />
       <BroadcastBanner />
+      <HUD />
 
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-32 top-10 h-[28rem] w-[28rem] rounded-full bg-white/[0.04] blur-3xl" />
@@ -120,9 +121,6 @@ function Desktop() {
         <div className="text-center">
           <div className="text-[12vw] font-bold tracking-tighter text-white/[0.04] leading-none">
             {brand.toLowerCase()}
-          </div>
-          <div className="-mt-2 text-xs uppercase tracking-[0.4em] text-foreground/30">
-            unblocked · private · fast
           </div>
         </div>
       </div>
@@ -136,7 +134,7 @@ function Desktop() {
         </button>
       </div>
 
-      <div className="relative z-10 grid max-h-[calc(100vh-6rem)] w-fit grid-cols-2 gap-1 p-4 sm:p-6">
+      <div className="relative z-10 grid max-h-[calc(100vh-6rem)] w-fit grid-cols-2 gap-1 p-4 pt-16 sm:p-6 sm:pt-16">
         {visibleApps.map((app) => (
           <AppIcon key={app.id} icon={app.icon} label={app.label}
             accent="oklch(0.85 0 0)"

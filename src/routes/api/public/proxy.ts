@@ -83,6 +83,12 @@ export const Route = createFileRoute("/api/public/proxy")({
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       GET: async ({ request }) => {
         const reqUrl = new URL(request.url);
+        if (reqUrl.searchParams.get("ping") === "1") {
+          return new Response(JSON.stringify({ ok: true, ts: Date.now() }), {
+            status: 200,
+            headers: { ...CORS, "content-type": "application/json", "cache-control": "no-store" },
+          });
+        }
         const target = reqUrl.searchParams.get("url");
         if (!target) {
           return new Response("Missing ?url=", { status: 400, headers: CORS });

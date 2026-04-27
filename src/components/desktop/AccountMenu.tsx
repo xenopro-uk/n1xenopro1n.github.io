@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { User as UserIcon, LogIn, LogOut, UserPlus, Loader2 } from "lucide-react";
-import { useAccount, signIn, signUp, signOut } from "@/lib/account";
+import { User as UserIcon, LogIn, LogOut, UserPlus, Loader2, KeyRound } from "lucide-react";
+import { useAccount, signIn, signUp, signOut, resetPassword } from "@/lib/account";
+import { isGuest } from "@/lib/auth-gate";
 import { toast } from "sonner";
 
 export function AccountMenu() {
@@ -11,6 +12,7 @@ export function AccountMenu() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,14 +26,26 @@ export function AccountMenu() {
     setOpen(false); setEmail(""); setPassword(""); setName("");
   };
 
-  const display = profile?.display_name || user?.email?.split("@")[0] || "Guest";
+  const sendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) { toast.error("Enter your email above first."); return; }
+    const { error } = await resetPassword(email);
+    if (error) toast.error(error.message);
+    else toast.success("Reset link sent. Check your email.");
+    setForgot(false);
+  };
+
+  const display = profile?.display_name || user?.email?.split("@")[0]
+    || (typeof window !== "undefined" && isGuest() ? "Guest" : "Account");
+  const guestMode = !user && typeof window !== "undefined" && isGuest();
 
   return (
     <div className="relative">
       <button onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs text-foreground/70 ring-1 ring-white/10 hover:bg-white/10">
         <UserIcon className="h-3 w-3" />
-        {user ? display : "Account"}
+        {display}
+        {guestMode && <span className="rounded bg-white/10 px-1 py-0.5 text-[9px] text-foreground/50">GUEST</span>}
         {isAdmin && <span className="rounded bg-white px-1 py-0.5 text-[9px] font-bold text-black">DEV</span>}
       </button>
 
@@ -46,35 +60,47 @@ export function AccountMenu() {
                 <LogOut className="h-3 w-3" /> Sign out of account
               </button>
               <p className="mt-2 text-[10px] text-foreground/40">
-                Your settings (cursor color, cloak) are saved across devices.
+                Your settings (cursor color, cloak, wallpaper) are saved across devices.
               </p>
             </div>
           ) : (
-            <form onSubmit={submit} className="space-y-2">
-              <div className="flex gap-1 rounded-md bg-white/5 p-0.5 text-[11px]">
-                {(["signin", "signup"] as const).map((m) => (
-                  <button key={m} type="button" onClick={() => setMode(m)}
-                    className={`flex-1 rounded py-1 transition ${mode === m ? "bg-white text-black" : "text-foreground/60"}`}>
-                    {m === "signin" ? "Sign in" : "Create account"}
-                  </button>
-                ))}
-              </div>
-              {mode === "signup" && (
+            <form onSubmit={forgot ? sendReset : submit} className="space-y-2">
+              {!forgot && (
+                <div className="flex gap-1 rounded-md bg-white/5 p-0.5 text-[11px]">
+                  {(["signin", "signup"] as const).map((m) => (
+                    <button key={m} type="button" onClick={() => setMode(m)}
+                      className={`flex-1 rounded py-1 transition ${mode === m ? "bg-white text-black" : "text-foreground/60"}`}>
+                      {m === "signin" ? "Sign in" : "Create account"}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {forgot && (
+                <div className="text-[11px] text-foreground/60">Reset password — enter your account email.</div>
+              )}
+              {mode === "signup" && !forgot && (
                 <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Display name"
                   className="w-full rounded-md bg-white/5 px-2 py-1.5 text-xs outline-none ring-1 ring-white/10 focus:ring-white/30" />
               )}
               <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Email" required
                 className="w-full rounded-md bg-white/5 px-2 py-1.5 text-xs outline-none ring-1 ring-white/10 focus:ring-white/30" />
-              <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Password" required minLength={6}
-                className="w-full rounded-md bg-white/5 px-2 py-1.5 text-xs outline-none ring-1 ring-white/10 focus:ring-white/30" />
+              {!forgot && (
+                <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Password" required minLength={6}
+                  className="w-full rounded-md bg-white/5 px-2 py-1.5 text-xs outline-none ring-1 ring-white/10 focus:ring-white/30" />
+              )}
               <button type="submit" disabled={busy}
                 className="flex w-full items-center justify-center gap-1.5 rounded-md bg-white py-1.5 text-xs font-medium text-black hover:bg-white/90 disabled:opacity-60">
                 {busy ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                  forgot ? <KeyRound className="h-3 w-3" /> :
                   mode === "signin" ? <LogIn className="h-3 w-3" /> : <UserPlus className="h-3 w-3" />}
-                {mode === "signin" ? "Sign in" : "Create account"}
+                {forgot ? "Send reset link" : mode === "signin" ? "Sign in" : "Create account"}
+              </button>
+              <button type="button" onClick={() => setForgot((v) => !v)}
+                className="w-full text-center text-[10px] text-foreground/50 hover:text-foreground">
+                {forgot ? "Back to sign in" : "Forgot password?"}
               </button>
               <p className="text-[10px] text-foreground/40">
-                Optional. Saves your cursor & cloak settings across devices.
+                Optional. Saves your cursor, cloak & wallpaper across devices.
               </p>
             </form>
           )}
