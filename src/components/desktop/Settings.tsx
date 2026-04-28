@@ -17,11 +17,12 @@ const PROXIES = PROXY_OPTIONS;
 
 type Tab = "cloak" | "proxy" | "wallpaper";
 
-export function Settings() {
+export function Settings({ initialTab = "cloak" }: { initialTab?: Tab } = {}) {
   const [cloak, setCloak] = useCloak();
   const [draft, setDraft] = useState(cloak);
-  const [tab, setTab] = useState<Tab>("cloak");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const { wallpaper, setWallpaper } = useWallpaper();
+  const [wpDraft, setWpDraft] = useState<{ url: string; kind: WallpaperKind; loop: boolean } | null>(wallpaper);
   const [urlDraft, setUrlDraft] = useState("");
   const [urlKind, setUrlKind] = useState<WallpaperKind>("image");
   const [busy, setBusy] = useState(false);
@@ -37,17 +38,21 @@ export function Settings() {
     setBusy(true);
     try {
       const { url, kind } = await uploadWallpaperFile(f);
-      await setWallpaper({ url, kind, loop: true });
-      toast.success("Wallpaper updated.");
+      setWpDraft({ url, kind, loop: true });
+      toast.success("Uploaded — press Apply to set it.");
     } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed."); }
     finally { setBusy(false); }
   };
 
-  const applyUrl = async () => {
+  const stageUrl = () => {
     if (!urlDraft.trim()) return;
-    await setWallpaper({ url: urlDraft.trim(), kind: urlKind, loop: true });
+    setWpDraft({ url: urlDraft.trim(), kind: urlKind, loop: true });
     setUrlDraft("");
-    toast.success("Wallpaper applied.");
+  };
+
+  const applyWallpaper = async () => {
+    await setWallpaper(wpDraft);
+    toast.success(wpDraft ? "Wallpaper applied." : "Wallpaper cleared.");
   };
 
   const TABS: { id: Tab; label: string; icon: typeof SettingsIcon }[] = [
@@ -151,35 +156,43 @@ export function Settings() {
             <section className="rounded-xl glass p-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Wallpaper</h3>
-                {wallpaper && (
-                  <button onClick={() => setWallpaper(null)}
+                {wpDraft && (
+                  <button onClick={() => setWpDraft(null)}
                     className="flex items-center gap-1 rounded-md bg-white/5 px-2.5 py-1 text-xs text-foreground/70 hover:bg-white/10">
-                    <Trash2 className="h-3 w-3" /> Clear
+                    <Trash2 className="h-3 w-3" /> Clear selection
                   </button>
                 )}
               </div>
               <p className="mt-1 text-xs text-foreground/60">
-                Pick a curated wallpaper, paste any image/video URL, or upload your own.
+                Pick one, paste a URL, or upload — then press <b>Apply</b> at the bottom.
               </p>
 
-              {wallpaper && (
-                <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/[0.03] p-2 ring-1 ring-white/10">
-                  <span className="text-[10px] uppercase tracking-wider text-foreground/40">{wallpaper.kind}</span>
-                  <span className="line-clamp-1 flex-1 font-mono text-[10px] text-foreground/60">{wallpaper.url}</span>
-                  {wallpaper.kind === "video" && (
-                    <button onClick={() => setWallpaper({ ...wallpaper, loop: !wallpaper.loop })}
-                      className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] ring-1 ${wallpaper.loop ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30" : "ring-white/10 text-foreground/60"}`}>
-                      <Repeat className="h-3 w-3" /> {wallpaper.loop ? "Loop on" : "Loop off"}
-                    </button>
+              {wpDraft && (
+                <div className="mt-3 overflow-hidden rounded-lg ring-1 ring-white/10">
+                  {wpDraft.kind === "video" ? (
+                    <video src={wpDraft.url} autoPlay muted loop={wpDraft.loop} playsInline
+                      className="h-32 w-full object-cover" />
+                  ) : (
+                    <img src={wpDraft.url} alt="" className="h-32 w-full object-cover" />
                   )}
+                  <div className="flex items-center gap-2 bg-white/[0.03] p-2">
+                    <span className="text-[10px] uppercase tracking-wider text-foreground/40">{wpDraft.kind}</span>
+                    <span className="line-clamp-1 flex-1 font-mono text-[10px] text-foreground/60">{wpDraft.url}</span>
+                    {wpDraft.kind === "video" && (
+                      <button onClick={() => setWpDraft({ ...wpDraft, loop: !wpDraft.loop })}
+                        className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] ring-1 ${wpDraft.loop ? "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30" : "ring-white/10 text-foreground/60"}`}>
+                        <Repeat className="h-3 w-3" /> {wpDraft.loop ? "Loop on" : "Loop off"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
               <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {CURATED.map((c) => (
-                  <button key={c.id} onClick={() => setWallpaper({ url: c.url, kind: c.kind, loop: true })}
+                  <button key={c.id} onClick={() => setWpDraft({ url: c.url, kind: c.kind, loop: true })}
                     className={`group relative aspect-video overflow-hidden rounded-lg ring-1 transition ${
-                      wallpaper?.url === c.url ? "ring-primary/60" : "ring-white/10 hover:ring-white/30"
+                      wpDraft?.url === c.url ? "ring-primary/60 ring-2" : "ring-white/10 hover:ring-white/30"
                     }`}>
                     <img src={c.thumb} alt={c.label} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5">
@@ -201,8 +214,8 @@ export function Settings() {
                     <option value="image">image</option>
                     <option value="video">video</option>
                   </select>
-                  <button onClick={applyUrl}
-                    className="rounded-md bg-white/10 px-3 py-2 text-xs hover:bg-white/15">Apply</button>
+                  <button onClick={stageUrl}
+                    className="rounded-md bg-white/10 px-3 py-2 text-xs hover:bg-white/15">Stage</button>
                 </div>
 
                 <div className="text-xs font-medium text-foreground/70">Upload your own</div>
@@ -212,7 +225,18 @@ export function Settings() {
                   className="flex items-center justify-center gap-2 rounded-md bg-white/5 px-3 py-2 text-xs ring-1 ring-white/10 hover:bg-white/10 disabled:opacity-50">
                   <Upload className="h-3 w-3" /> {busy ? "Uploading…" : "Choose file"}
                 </button>
-                <p className="text-[10px] text-foreground/40">Sign-in required to upload. Files are stored privately to your account.</p>
+                <p className="text-[10px] text-foreground/40">Sign-in required to upload. Files are stored privately.</p>
+              </div>
+
+              <div className="sticky bottom-0 -mx-4 -mb-4 mt-5 flex gap-2 border-t border-white/10 bg-background/80 p-3 backdrop-blur">
+                <button onClick={applyWallpaper}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                  <Save className="h-4 w-4" /> Apply wallpaper
+                </button>
+                <button onClick={() => setWpDraft(wallpaper)}
+                  className="rounded-md bg-white/5 px-4 py-2 text-sm text-foreground/70 hover:bg-white/10">
+                  Revert
+                </button>
               </div>
             </section>
           )}

@@ -22,6 +22,7 @@ import { AccountMenu } from "@/components/desktop/AccountMenu";
 import { BroadcastBanner } from "@/components/desktop/BroadcastBanner";
 import { HUD } from "@/components/desktop/HUD";
 import { WallpaperLayer } from "@/components/desktop/WallpaperLayer";
+import { DesktopContextMenu } from "@/components/desktop/DesktopContextMenu";
 import { useCloak } from "@/lib/cloak";
 import { isAuthed, isDevGate, clearAuthed } from "@/lib/auth-gate";
 import { useAccount } from "@/lib/account";
@@ -55,6 +56,7 @@ const APPS: AppDef[] = [
 function Desktop() {
   const navigate = useNavigate();
   const [openApp, setOpenApp] = useState<AppId | null>(null);
+  const [settingsTab, setSettingsTab] = useState<"cloak" | "proxy" | "wallpaper">("cloak");
   const [cloak] = useCloak();
   const bgRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
@@ -113,6 +115,11 @@ function Desktop() {
       <WallpaperLayer />
       <BroadcastBanner />
       <HUD />
+      <DesktopContextMenu
+        onChangeWallpaper={() => { setSettingsTab("wallpaper"); setOpenApp("settings"); }}
+        onOpenProxy={() => setOpenApp("browser")}
+        onSignOut={signOut}
+      />
 
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-32 top-10 h-[28rem] w-[28rem] rounded-full bg-white/[0.04] blur-3xl" />
@@ -154,7 +161,7 @@ function Desktop() {
           {openApp === "news" && <News />}
           {openApp === "music" && <MusicApp />}
           {openApp === "calc" && <Calculator />}
-          {openApp === "settings" && <Settings />}
+          {openApp === "settings" && <Settings initialTab={settingsTab} />}
           {openApp === "admin" && <AdminPanel />}
         </Window>
       )}
