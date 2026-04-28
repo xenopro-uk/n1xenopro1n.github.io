@@ -17,10 +17,10 @@ const PROXIES = PROXY_OPTIONS;
 
 type Tab = "cloak" | "proxy" | "wallpaper";
 
-export function Settings() {
+export function Settings({ initialTab = "cloak" }: { initialTab?: Tab } = {}) {
   const [cloak, setCloak] = useCloak();
   const [draft, setDraft] = useState(cloak);
-  const [tab, setTab] = useState<Tab>("cloak");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const { wallpaper, setWallpaper } = useWallpaper();
   const [wpDraft, setWpDraft] = useState<{ url: string; kind: WallpaperKind; loop: boolean } | null>(wallpaper);
   const [urlDraft, setUrlDraft] = useState("");
