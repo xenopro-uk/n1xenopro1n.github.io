@@ -161,7 +161,7 @@ function Desktop() {
           {openApp === "news" && <News />}
           {openApp === "music" && <MusicApp />}
           {openApp === "calc" && <Calculator />}
-          {openApp === "settings" && <Settings />}
+          {openApp === "settings" && <Settings initialTab={settingsTab} />}
           {openApp === "admin" && <AdminPanel />}
         </Window>
       )}
