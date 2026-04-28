@@ -21,63 +21,44 @@ export interface CuratedWallpaper {
   category: "anime" | "gaming" | "abstract" | "nature";
 }
 
-// Curated public looping wallpapers (mp4 + image hotlink-friendly hosts).
+// Curated wallpapers — pexels videos and images (CORS + hotlink friendly).
+const px = (id: string, w = 1920) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&w=${w}`;
+const pxv = (id: string, file: string) => `https://videos.pexels.com/video-files/${id}/${file}`;
+
 export const CURATED: CuratedWallpaper[] = [
-  // Anime
-  { id: "gojo-floating", label: "Gojo Floating", category: "anime",
-    kind: "video",
-    thumb: "https://i.imgur.com/M3mZjK7.jpg",
-    url: "https://cdn.pixabay.com/video/2023/10/26/186314-877723657_large.mp4" },
-  { id: "yuji-domain", label: "Yuji Domain", category: "anime",
-    kind: "video",
-    thumb: "https://i.imgur.com/h2YkZBb.jpg",
-    url: "https://cdn.pixabay.com/video/2024/05/10/210619_large.mp4" },
-  { id: "kaneki-mask", label: "Kaneki Mask", category: "anime",
-    kind: "video",
-    thumb: "https://i.imgur.com/5G2XJBx.jpg",
-    url: "https://cdn.pixabay.com/video/2022/03/30/112861-695121375_large.mp4" },
-  { id: "anime-city", label: "Anime City", category: "anime",
-    kind: "video",
-    thumb: "https://images.pexels.com/photos/2693212/pexels-photo-2693212.jpeg?w=400",
-    url: "https://cdn.pixabay.com/video/2023/06/21/167540-839357815_large.mp4" },
+  // Anime / Aesthetic vibes
+  { id: "anime-night", label: "Anime Night", category: "anime", kind: "video",
+    thumb: px("2693212", 400), url: pxv("2887463", "2887463-hd_1920_1080_25fps.mp4") },
+  { id: "neon-rain", label: "Neon Rain", category: "anime", kind: "video",
+    thumb: px("2693529", 400), url: pxv("2491284", "2491284-uhd_2560_1440_24fps.mp4") },
+  { id: "tokyo-street", label: "Tokyo Street", category: "anime", kind: "video",
+    thumb: px("2614818", 400), url: pxv("3015527", "3015527-hd_1920_1080_24fps.mp4") },
+  { id: "sakura", label: "Sakura Drift", category: "anime", kind: "image",
+    thumb: px("1408221", 400), url: px("1408221") },
 
   // Gaming
-  { id: "god-of-war", label: "God of War — Kratos", category: "gaming",
-    kind: "video",
-    thumb: "https://images.pexels.com/photos/3617457/pexels-photo-3617457.jpeg?w=400",
-    url: "https://cdn.pixabay.com/video/2022/12/19/142692-781239580_large.mp4" },
-  { id: "cyberpunk", label: "Cyberpunk Night", category: "gaming",
-    kind: "video",
-    thumb: "https://images.pexels.com/photos/3052361/pexels-photo-3052361.jpeg?w=400",
-    url: "https://cdn.pixabay.com/video/2022/12/05/141103-777964519_large.mp4" },
-  { id: "valorant", label: "Neon Arena", category: "gaming",
-    kind: "video",
-    thumb: "https://images.pexels.com/photos/2110951/pexels-photo-2110951.jpeg?w=400",
-    url: "https://cdn.pixabay.com/video/2024/02/29/202375-919535172_large.mp4" },
+  { id: "god-of-war", label: "Warrior", category: "gaming", kind: "video",
+    thumb: px("3617457", 400), url: pxv("3045163", "3045163-hd_1920_1080_24fps.mp4") },
+  { id: "cyberpunk", label: "Cyber City", category: "gaming", kind: "video",
+    thumb: px("3052361", 400), url: pxv("2887463", "2887463-hd_1920_1080_25fps.mp4") },
+  { id: "neon-arena", label: "Neon Arena", category: "gaming", kind: "image",
+    thumb: px("2110951", 400), url: px("2110951") },
 
   // Abstract
-  { id: "particles", label: "Particles", category: "abstract",
-    kind: "video",
-    thumb: "https://images.pexels.com/photos/1146134/pexels-photo-1146134.jpeg?w=400",
-    url: "https://cdn.pixabay.com/video/2020/09/18/50113-460274441_large.mp4" },
-  { id: "liquid", label: "Liquid Ink", category: "abstract",
-    kind: "video",
-    thumb: "https://images.pexels.com/photos/1342460/pexels-photo-1342460.jpeg?w=400",
-    url: "https://cdn.pixabay.com/video/2021/10/12/91744-633332836_large.mp4" },
-  { id: "neon-grid", label: "Neon Grid", category: "abstract",
-    kind: "video",
-    thumb: "https://images.pexels.com/photos/2832382/pexels-photo-2832382.jpeg?w=400",
-    url: "https://cdn.pixabay.com/video/2022/10/22/136011-762486551_large.mp4" },
+  { id: "particles", label: "Particles", category: "abstract", kind: "video",
+    thumb: px("1146134", 400), url: pxv("3045163", "3045163-hd_1920_1080_24fps.mp4") },
+  { id: "liquid", label: "Liquid Ink", category: "abstract", kind: "video",
+    thumb: px("1342460", 400), url: pxv("3214448", "3214448-hd_1920_1080_25fps.mp4") },
+  { id: "neon-grid", label: "Neon Grid", category: "abstract", kind: "image",
+    thumb: px("2832382", 400), url: px("2832382") },
 
-  // Nature stills
-  { id: "mountain", label: "Mountain", category: "nature",
-    kind: "image",
-    thumb: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?w=400",
-    url: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?w=1920" },
-  { id: "ocean", label: "Ocean", category: "nature",
-    kind: "image",
-    thumb: "https://images.pexels.com/photos/355288/pexels-photo-355288.jpeg?w=400",
-    url: "https://images.pexels.com/photos/355288/pexels-photo-355288.jpeg?w=1920" },
+  // Nature
+  { id: "mountain", label: "Mountain", category: "nature", kind: "image",
+    thumb: px("417074", 400), url: px("417074") },
+  { id: "ocean", label: "Ocean Waves", category: "nature", kind: "video",
+    thumb: px("355288", 400), url: pxv("1093662", "1093662-hd_1920_1080_30fps.mp4") },
+  { id: "forest", label: "Forest", category: "nature", kind: "image",
+    thumb: px("38136", 400), url: px("38136") },
 ];
 
 const DEFAULT: Wallpaper | null = null;
