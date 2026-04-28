@@ -110,6 +110,7 @@ function Desktop() {
     <div ref={bgRef} onClick={handleBgClick}
       className="relative h-screen w-screen overflow-hidden">
       <DotCursor />
+      <WallpaperLayer />
       <BroadcastBanner />
       <HUD />
 
