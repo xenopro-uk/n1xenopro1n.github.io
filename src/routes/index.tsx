@@ -21,6 +21,7 @@ import { AdminPanel } from "@/components/desktop/AdminPanel";
 import { AccountMenu } from "@/components/desktop/AccountMenu";
 import { BroadcastBanner } from "@/components/desktop/BroadcastBanner";
 import { HUD } from "@/components/desktop/HUD";
+import { WallpaperLayer } from "@/components/desktop/WallpaperLayer";
 import { useCloak } from "@/lib/cloak";
 import { isAuthed, isDevGate, clearAuthed } from "@/lib/auth-gate";
 import { useAccount } from "@/lib/account";
@@ -109,6 +110,7 @@ function Desktop() {
     <div ref={bgRef} onClick={handleBgClick}
       className="relative h-screen w-screen overflow-hidden">
       <DotCursor />
+      <WallpaperLayer />
       <BroadcastBanner />
       <HUD />
 
