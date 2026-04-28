@@ -35,6 +35,7 @@ export function Window({ title, onClose, children, initial }: WindowProps) {
 
   return (
     <div
+      data-window
       className={`absolute z-30 flex animate-in fade-in zoom-in-95 duration-200 ${full ? "" : ""}`}
       style={style as React.CSSProperties}
     >
