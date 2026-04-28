@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { Settings as SettingsIcon, Save, RotateCcw } from "lucide-react";
+import { useRef, useState } from "react";
+import { Settings as SettingsIcon, Save, RotateCcw, Image as ImageIcon, Upload, Trash2, Repeat } from "lucide-react";
 import { useCloak, type ProxyProvider, PROXY_OPTIONS } from "@/lib/cloak";
+import { useWallpaper, uploadWallpaperFile, CURATED, type WallpaperKind } from "@/lib/wallpaper";
+import { toast } from "sonner";
 
 const PRESETS = [
   { title: "Google", favicon: "https://www.google.com/favicon.ico" },
