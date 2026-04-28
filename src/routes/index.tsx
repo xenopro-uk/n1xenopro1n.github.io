@@ -56,6 +56,7 @@ const APPS: AppDef[] = [
 function Desktop() {
   const navigate = useNavigate();
   const [openApp, setOpenApp] = useState<AppId | null>(null);
+  const [settingsTab, setSettingsTab] = useState<"cloak" | "proxy" | "wallpaper">("cloak");
   const [cloak] = useCloak();
   const bgRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
