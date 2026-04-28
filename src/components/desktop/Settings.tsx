@@ -15,14 +15,39 @@ const PRESETS = [
 
 const PROXIES = PROXY_OPTIONS;
 
+type Tab = "cloak" | "proxy" | "wallpaper";
+
 export function Settings() {
   const [cloak, setCloak] = useCloak();
   const [draft, setDraft] = useState(cloak);
+  const [tab, setTab] = useState<Tab>("cloak");
+  const { wallpaper, setWallpaper } = useWallpaper();
+  const [urlDraft, setUrlDraft] = useState("");
+  const [urlKind, setUrlKind] = useState<WallpaperKind>("image");
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const apply = () => setCloak(draft);
   const reset = () => {
     const fresh = { tabTitle: "XenoPro", faviconUrl: "", proxy: "croxy" as ProxyProvider };
     setDraft(fresh); setCloak(fresh);
+  };
+
+  const onUpload = async (f: File) => {
+    setBusy(true);
+    try {
+      const { url, kind } = await uploadWallpaperFile(f);
+      await setWallpaper({ url, kind, loop: true });
+      toast.success("Wallpaper updated.");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed."); }
+    finally { setBusy(false); }
+  };
+
+  const applyUrl = async () => {
+    if (!urlDraft.trim()) return;
+    await setWallpaper({ url: urlDraft.trim(), kind: urlKind, loop: true });
+    setUrlDraft("");
+    toast.success("Wallpaper applied.");
   };
 
   return (
