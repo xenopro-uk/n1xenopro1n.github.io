@@ -22,6 +22,7 @@ export function Settings() {
   const [draft, setDraft] = useState(cloak);
   const [tab, setTab] = useState<Tab>("cloak");
   const { wallpaper, setWallpaper } = useWallpaper();
+  const [wpDraft, setWpDraft] = useState<{ url: string; kind: WallpaperKind; loop: boolean } | null>(wallpaper);
   const [urlDraft, setUrlDraft] = useState("");
   const [urlKind, setUrlKind] = useState<WallpaperKind>("image");
   const [busy, setBusy] = useState(false);
@@ -37,17 +38,21 @@ export function Settings() {
     setBusy(true);
     try {
       const { url, kind } = await uploadWallpaperFile(f);
-      await setWallpaper({ url, kind, loop: true });
-      toast.success("Wallpaper updated.");
+      setWpDraft({ url, kind, loop: true });
+      toast.success("Uploaded — press Apply to set it.");
     } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed."); }
     finally { setBusy(false); }
   };
 
-  const applyUrl = async () => {
+  const stageUrl = () => {
     if (!urlDraft.trim()) return;
-    await setWallpaper({ url: urlDraft.trim(), kind: urlKind, loop: true });
+    setWpDraft({ url: urlDraft.trim(), kind: urlKind, loop: true });
     setUrlDraft("");
-    toast.success("Wallpaper applied.");
+  };
+
+  const applyWallpaper = async () => {
+    await setWallpaper(wpDraft);
+    toast.success(wpDraft ? "Wallpaper applied." : "Wallpaper cleared.");
   };
 
   const TABS: { id: Tab; label: string; icon: typeof SettingsIcon }[] = [
