@@ -115,6 +115,11 @@ function Desktop() {
       <WallpaperLayer />
       <BroadcastBanner />
       <HUD />
+      <DesktopContextMenu
+        onChangeWallpaper={() => { setSettingsTab("wallpaper"); setOpenApp("settings"); }}
+        onOpenProxy={() => setOpenApp("browser")}
+        onSignOut={signOut}
+      />
 
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-32 top-10 h-[28rem] w-[28rem] rounded-full bg-white/[0.04] blur-3xl" />
