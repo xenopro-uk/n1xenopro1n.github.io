@@ -176,6 +176,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_songs: {
+        Row: {
+          artist_name: string
+          artwork_url: string | null
+          collection_name: string | null
+          created_at: string
+          id: string
+          preview_url: string
+          track_id: string
+          track_name: string
+          user_id: string
+        }
+        Insert: {
+          artist_name: string
+          artwork_url?: string | null
+          collection_name?: string | null
+          created_at?: string
+          id?: string
+          preview_url: string
+          track_id: string
+          track_name: string
+          user_id: string
+        }
+        Update: {
+          artist_name?: string
+          artwork_url?: string | null
+          collection_name?: string | null
+          created_at?: string
+          id?: string
+          preview_url?: string
+          track_id?: string
+          track_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
