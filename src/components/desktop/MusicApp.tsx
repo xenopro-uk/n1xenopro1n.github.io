@@ -27,10 +27,10 @@ interface SavedRow {
   collection_name: string | null;
 }
 
-const SEED = ["top hits 2024", "lofi", "pop", "rock", "hip hop", "edm", "jazz", "k-pop", "indie"];
+const SEED = ["top hits 2026", "lofi beats", "pop", "rock", "hip hop", "edm", "jazz", "k-pop", "indie", "rnb"];
 type View = "home" | "search" | "liked";
 
-const cover = (url: string) => url.replace("100x100", "300x300");
+const cover = (url: string) => url || "";
 
 export function MusicApp() {
   const { user } = useAccount();
