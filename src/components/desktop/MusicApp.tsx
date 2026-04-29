@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAccount } from "@/lib/account";
 import { toast } from "sonner";
 
-// iTunes Search API — free, no key, CORS-enabled. Returns 30s previews.
-// (Spotify Web API would require SPOTIFY_CLIENT_ID + SECRET; not yet provided.)
+// Spotify Web API via /api/public/spotify (Client Credentials flow, server-side).
+// Returns 30s previews (Spotify limitation for non-Premium API access).
 interface Track {
   trackId: string;
   trackName: string;
@@ -27,10 +27,10 @@ interface SavedRow {
   collection_name: string | null;
 }
 
-const SEED = ["top hits 2024", "lofi", "pop", "rock", "hip hop", "edm", "jazz", "k-pop", "indie"];
+const SEED = ["top hits 2026", "lofi beats", "pop", "rock", "hip hop", "edm", "jazz", "k-pop", "indie", "rnb"];
 type View = "home" | "search" | "liked";
 
-const cover = (url: string) => url.replace("100x100", "300x300");
+const cover = (url: string) => url || "";
 
 export function MusicApp() {
   const { user } = useAccount();
@@ -68,15 +68,10 @@ export function MusicApp() {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const url = `https://itunes.apple.com/search?media=music&limit=40&term=${encodeURIComponent(query)}`;
-      const r = await fetch(url);
-      const j = await r.json();
-      const ts: Track[] = (j.results ?? [])
-        .filter((t: { previewUrl?: string }) => t.previewUrl)
-        .map((t: { trackId: number; trackName: string; artistName: string; collectionName?: string; artworkUrl100: string; previewUrl: string }) => ({
-          trackId: String(t.trackId), trackName: t.trackName, artistName: t.artistName,
-          collectionName: t.collectionName, artworkUrl: t.artworkUrl100, previewUrl: t.previewUrl,
-        }));
+      const r = await fetch(`/api/public/spotify?action=search&q=${encodeURIComponent(query)}`);
+      const j = await r.json() as { items?: Track[] };
+      // Filter to tracks that have a preview (Spotify doesn't always return one)
+      const ts = (j.items ?? []).filter((t) => t.previewUrl);
       setTracks(ts);
     } catch { setTracks([]); }
     finally { setLoading(false); }
@@ -262,7 +257,7 @@ export function MusicApp() {
               className="h-1 flex-1 accent-white" />
           </div>
         </div>
-        <p className="mt-2 text-center text-[9px] text-white/30">Previews via iTunes · 30s · Sign in to save songs</p>
+        <p className="mt-2 text-center text-[9px] text-white/30">Powered by Spotify · 30s previews · {user ? `signed in as @${user.email?.split("@")[0]}` : "sign in to save songs"}</p>
         <audio ref={audioRef}
           onTimeUpdate={(e) => { const a = e.currentTarget; setProgress(a.duration ? a.currentTime / a.duration : 0); }}
           onEnded={() => skip(1)} />

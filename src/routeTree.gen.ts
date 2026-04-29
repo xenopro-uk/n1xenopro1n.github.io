@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LoadingRouteImport } from './routes/loading'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicSpotifyRouteImport } from './routes/api/public/spotify'
 import { Route as ApiPublicProxyRouteImport } from './routes/api/public/proxy'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSpotifyRoute = ApiPublicSpotifyRouteImport.update({
+  id: '/api/public/spotify',
+  path: '/api/public/spotify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicProxyRoute = ApiPublicProxyRouteImport.update({
   id: '/api/public/proxy',
   path: '/api/public/proxy',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/public/proxy': typeof ApiPublicProxyRoute
+  '/api/public/spotify': typeof ApiPublicSpotifyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/public/proxy': typeof ApiPublicProxyRoute
+  '/api/public/spotify': typeof ApiPublicSpotifyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/public/proxy': typeof ApiPublicProxyRoute
+  '/api/public/spotify': typeof ApiPublicSpotifyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,8 +80,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/api/public/proxy'
+    | '/api/public/spotify'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/loading' | '/login' | '/reset-password' | '/api/public/proxy'
+  to:
+    | '/'
+    | '/loading'
+    | '/login'
+    | '/reset-password'
+    | '/api/public/proxy'
+    | '/api/public/spotify'
   id:
     | '__root__'
     | '/'
@@ -80,6 +96,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/api/public/proxy'
+    | '/api/public/spotify'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -88,6 +105,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicProxyRoute: typeof ApiPublicProxyRoute
+  ApiPublicSpotifyRoute: typeof ApiPublicSpotifyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -120,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/spotify': {
+      id: '/api/public/spotify'
+      path: '/api/public/spotify'
+      fullPath: '/api/public/spotify'
+      preLoaderRoute: typeof ApiPublicSpotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/proxy': {
       id: '/api/public/proxy'
       path: '/api/public/proxy'
@@ -136,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicProxyRoute: ApiPublicProxyRoute,
+  ApiPublicSpotifyRoute: ApiPublicSpotifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
