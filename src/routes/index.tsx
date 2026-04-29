@@ -27,6 +27,7 @@ import { useCloak } from "@/lib/cloak";
 import { isAuthed, isDevGate, clearAuthed } from "@/lib/auth-gate";
 import { useAccount } from "@/lib/account";
 import { supabase } from "@/integrations/supabase/client";
+import { logActivity } from "@/lib/surveillance";
 
 export const Route = createFileRoute("/")({
   component: Desktop,
@@ -147,13 +148,13 @@ function Desktop() {
         {visibleApps.map((app) => (
           <AppIcon key={app.id} icon={app.icon} label={app.label}
             accent="oklch(0.85 0 0)"
-            onClick={() => setOpenApp(app.id)} />
+            onClick={() => { void logActivity("app.open", app.id, { label: app.label }); setOpenApp(app.id); }} />
         ))}
       </div>
 
       {openApp && (
         <Window title={APPS.find((a) => a.id === openApp)?.label ?? ""}
-          onClose={() => setOpenApp(null)}>
+          onClose={() => { void logActivity("app.close", openApp); setOpenApp(null); }}>
           {openApp === "browser" && <Browser />}
           {openApp === "ai" && <AI />}
           {openApp === "games" && <Games />}
