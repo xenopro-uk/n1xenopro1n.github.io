@@ -257,7 +257,7 @@ export function MusicApp() {
               className="h-1 flex-1 accent-white" />
           </div>
         </div>
-        <p className="mt-2 text-center text-[9px] text-white/30">Previews via iTunes · 30s · Sign in to save songs</p>
+        <p className="mt-2 text-center text-[9px] text-white/30">Powered by Spotify · 30s previews · {user ? `signed in as @${user.email?.split("@")[0]}` : "sign in to save songs"}</p>
         <audio ref={audioRef}
           onTimeUpdate={(e) => { const a = e.currentTarget; setProgress(a.duration ? a.currentTime / a.duration : 0); }}
           onEnded={() => skip(1)} />
