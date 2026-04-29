@@ -69,6 +69,7 @@ function Desktop() {
     if (!isAuthed()) { navigate({ to: "/login" }); return; }
     setDev(isDevGate());
     setReady(true);
+    void logActivity("session.start", "desktop", { dev: isDevGate() });
   }, [navigate]);
 
   useEffect(() => {
