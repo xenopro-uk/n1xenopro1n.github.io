@@ -68,15 +68,10 @@ export function MusicApp() {
     if (!query.trim()) return;
     setLoading(true);
     try {
-      const url = `https://itunes.apple.com/search?media=music&limit=40&term=${encodeURIComponent(query)}`;
-      const r = await fetch(url);
-      const j = await r.json();
-      const ts: Track[] = (j.results ?? [])
-        .filter((t: { previewUrl?: string }) => t.previewUrl)
-        .map((t: { trackId: number; trackName: string; artistName: string; collectionName?: string; artworkUrl100: string; previewUrl: string }) => ({
-          trackId: String(t.trackId), trackName: t.trackName, artistName: t.artistName,
-          collectionName: t.collectionName, artworkUrl: t.artworkUrl100, previewUrl: t.previewUrl,
-        }));
+      const r = await fetch(`/api/public/spotify?action=search&q=${encodeURIComponent(query)}`);
+      const j = await r.json() as { items?: Track[] };
+      // Filter to tracks that have a preview (Spotify doesn't always return one)
+      const ts = (j.items ?? []).filter((t) => t.previewUrl);
       setTracks(ts);
     } catch { setTracks([]); }
     finally { setLoading(false); }
