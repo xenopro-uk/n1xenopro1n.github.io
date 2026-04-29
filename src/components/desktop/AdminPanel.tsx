@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Megaphone, Ban, Trash2, Send, Shield, Loader2 } from "lucide-react";
+import { Megaphone, Ban, Trash2, Send, Shield, Loader2, Eye, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccount } from "@/lib/account";
 import { isDevGate } from "@/lib/auth-gate";
@@ -11,15 +11,19 @@ interface BroadcastRow {
 }
 interface BanRow { id: string; user_id: string; reason: string | null; created_at: string; }
 interface ProfileLite { user_id: string; display_name: string | null; }
+interface ActivityRow {
+  id: string; user_id: string; display_name: string | null;
+  action: string; target: string | null;
+  details: Record<string, unknown> | null;
+  user_agent: string | null; created_at: string;
+}
 
 export function AdminPanel() {
   const { isAdmin, user } = useAccount();
   const devGate = typeof window !== "undefined" && isDevGate();
-  // The hardcoded dev gate alone unlocks the panel UI, but DB writes still need a
-  // signed-in admin account. Show a hint if they're on the gate without an account.
   const hasDbWrite = isAdmin;
 
-  const [tab, setTab] = useState<"broadcast" | "users">("broadcast");
+  const [tab, setTab] = useState<"broadcast" | "users" | "surveillance">("broadcast");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [style, setStyle] = useState<"banner" | "toast">("banner");
@@ -28,8 +32,18 @@ export function AdminPanel() {
   const [users, setUsers] = useState<ProfileLite[]>([]);
   const [bans, setBans] = useState<BanRow[]>([]);
   const [banReason, setBanReason] = useState("");
+  const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [actionFilter, setActionFilter] = useState("");
+  const [userFilter, setUserFilter] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => { void refresh(); }, [user, isAdmin]);
+  useEffect(() => {
+    if (!autoRefresh || tab !== "surveillance") return;
+    const id = setInterval(() => loadActivity(), 4000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefresh, tab, actionFilter, userFilter]);
 
   const refresh = async () => {
     const [b, p, ba] = await Promise.all([
@@ -40,10 +54,22 @@ export function AdminPanel() {
     setList((b.data as BroadcastRow[]) ?? []);
     setUsers((p.data as ProfileLite[]) ?? []);
     setBans((ba.data as BanRow[]) ?? []);
+    loadActivity();
+  };
+
+  const loadActivity = async () => {
+    let q = supabase.from("activity_log" as never)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (actionFilter) q = q.ilike("action", `%${actionFilter}%`);
+    if (userFilter) q = q.ilike("display_name", `%${userFilter}%`);
+    const { data } = await q;
+    setActivity((data as unknown as ActivityRow[]) ?? []);
   };
 
   const send = async () => {
-    if (!hasDbWrite || !user) { toast.error("Sign in with the dev Cloud account to publish."); return; }
+    if (!hasDbWrite || !user) { toast.error("Sign in with the dev account to publish."); return; }
     if (!title || !body) { toast.error("Title and body required"); return; }
     setSending(true);
     const { error } = await supabase.from("broadcasts").insert({ title, body, style, author_id: user.id });
@@ -64,7 +90,7 @@ export function AdminPanel() {
   };
 
   const ban = async (uid: string) => {
-    if (!hasDbWrite || !user) { toast.error("Sign in with the dev Cloud account to ban."); return; }
+    if (!hasDbWrite || !user) { toast.error("Sign in with the dev account to ban."); return; }
     const { error } = await supabase.from("bans").insert({ user_id: uid, reason: banReason || null, banned_by: user.id });
     if (error) { toast.error(error.message); return; }
     toast.success("User banned");
@@ -73,6 +99,14 @@ export function AdminPanel() {
   const unban = async (uid: string) => {
     await supabase.from("bans").delete().eq("user_id", uid);
     refresh();
+  };
+
+  const clearActivity = async () => {
+    if (!confirm("Wipe ALL activity logs? This cannot be undone.")) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("activity_log" as never) as any).delete().not("id", "is", null);
+    toast.success("Activity log cleared");
+    loadActivity();
   };
 
   if (!devGate && !isAdmin) {
@@ -92,11 +126,11 @@ export function AdminPanel() {
       </div>
 
       <div className="flex gap-1 border-b border-white/10 px-3 py-1.5">
-        {(["broadcast", "users"] as const).map((t) => (
+        {(["broadcast", "users", "surveillance"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`rounded-md px-3 py-1 text-xs capitalize transition ${
               tab === t ? "bg-white text-black" : "text-foreground/60 hover:bg-white/5"}`}>
-            {t === "broadcast" ? "Broadcasts" : "Users / Bans"}
+            {t === "broadcast" ? "Broadcasts" : t === "users" ? "Users / Bans" : "Surveillance"}
           </button>
         ))}
       </div>
@@ -173,6 +207,64 @@ export function AdminPanel() {
               );
             })}
             {users.length === 0 && <div className="py-8 text-center text-xs text-foreground/40">No users have signed up yet.</div>}
+          </div>
+        </div>
+      )}
+
+      {tab === "surveillance" && (
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-white/[0.02] px-4 py-2">
+            <Eye className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="text-xs font-medium">Live activity feed · {activity.length} events</span>
+            <input value={actionFilter} onChange={(e) => setActionFilter(e.target.value)}
+              placeholder="filter action…"
+              className="rounded bg-white/5 px-2 py-1 text-[11px] outline-none ring-1 ring-white/10" />
+            <input value={userFilter} onChange={(e) => setUserFilter(e.target.value)}
+              placeholder="filter user…"
+              className="rounded bg-white/5 px-2 py-1 text-[11px] outline-none ring-1 ring-white/10" />
+            <button onClick={loadActivity} className="rounded bg-white/5 p-1 hover:bg-white/10">
+              <RefreshCw className="h-3 w-3" />
+            </button>
+            <label className="flex items-center gap-1 text-[10px] text-white/60">
+              <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+              auto
+            </label>
+            <button onClick={clearActivity} className="ml-auto rounded bg-red-500/10 px-2 py-1 text-[10px] text-red-300 hover:bg-red-500/20">
+              Wipe log
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <table className="w-full text-left text-[11px]">
+              <thead className="sticky top-0 bg-black/80 text-[10px] uppercase tracking-wider text-white/40">
+                <tr>
+                  <th className="px-3 py-1.5">Time</th>
+                  <th className="px-3 py-1.5">User</th>
+                  <th className="px-3 py-1.5">Action</th>
+                  <th className="px-3 py-1.5">Target</th>
+                  <th className="px-3 py-1.5">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activity.map((a) => (
+                  <tr key={a.id} className="border-t border-white/5 hover:bg-white/[0.02]">
+                    <td className="whitespace-nowrap px-3 py-1 font-mono text-white/50">
+                      {new Date(a.created_at).toLocaleTimeString()}
+                    </td>
+                    <td className="px-3 py-1 font-medium">{a.display_name || a.user_id.slice(0, 8)}</td>
+                    <td className="px-3 py-1">
+                      <span className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px]">{a.action}</span>
+                    </td>
+                    <td className="px-3 py-1 font-mono text-white/70">{a.target ?? "—"}</td>
+                    <td className="px-3 py-1 font-mono text-[10px] text-white/50">
+                      {a.details && Object.keys(a.details).length ? JSON.stringify(a.details) : ""}
+                    </td>
+                  </tr>
+                ))}
+                {activity.length === 0 && (
+                  <tr><td colSpan={5} className="py-8 text-center text-white/40">No activity recorded yet.</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
