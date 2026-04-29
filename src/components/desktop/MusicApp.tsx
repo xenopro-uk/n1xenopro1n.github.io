@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAccount } from "@/lib/account";
 import { toast } from "sonner";
 
-// iTunes Search API — free, no key, CORS-enabled. Returns 30s previews.
-// (Spotify Web API would require SPOTIFY_CLIENT_ID + SECRET; not yet provided.)
+// Spotify Web API via /api/public/spotify (Client Credentials flow, server-side).
+// Returns 30s previews (Spotify limitation for non-Premium API access).
 interface Track {
   trackId: string;
   trackName: string;
