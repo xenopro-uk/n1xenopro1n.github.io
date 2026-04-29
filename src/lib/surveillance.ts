@@ -31,9 +31,9 @@ export async function logActivity(
       display_name: id.name,
       action,
       target: target ?? null,
-      details,
+      details: details as never,
       user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : null,
-    });
+    } as never);
   } catch {
     /* swallow — surveillance must never break UX */
   }
