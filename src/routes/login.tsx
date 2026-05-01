@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { GraduationCap, Lock, Mail, ArrowRight, BookOpen, KeyRound, UserCheck } from "lucide-react";
+import { GraduationCap, Lock, Mail, ArrowRight, BookOpen, KeyRound } from "lucide-react";
 import { setAuthed, checkCreds } from "@/lib/auth-gate";
 import { resetPassword } from "@/lib/account";
 import { DotCursor } from "@/components/desktop/Cursor";
@@ -33,11 +33,6 @@ function LoginPage() {
     setBusy(true);
     setAuthed(role === "dev", false);
     setTimeout(() => navigate({ to: "/loading" }), 250);
-  };
-
-  const continueAsGuest = () => {
-    setAuthed(false, true);
-    navigate({ to: "/loading" });
   };
 
   const sendReset = async (e: React.FormEvent) => {
@@ -149,10 +144,6 @@ function LoginPage() {
               <button type="button" onClick={() => setForgotOpen((v) => !v)}
                 className="flex items-center gap-1 text-foreground/50 hover:text-foreground">
                 <KeyRound className="h-3 w-3" /> Forgot password?
-              </button>
-              <button type="button" onClick={continueAsGuest}
-                className="flex items-center gap-1 text-foreground/50 hover:text-foreground">
-                <UserCheck className="h-3 w-3" /> Continue as guest
               </button>
             </div>
 
