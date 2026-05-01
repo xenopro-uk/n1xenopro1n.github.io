@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, RotateCw, Search, Shield, Lock, Globe, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, RotateCw, Search, Shield, Lock, Globe, Zap, Plus, X } from "lucide-react";
 import { proxify, useCloak, PROXY_OPTIONS, PROVIDER_FALLBACK_ORDER, type ProxyProvider } from "@/lib/cloak";
 
 const QUICK_LINKS = [
@@ -13,74 +13,138 @@ const QUICK_LINKS = [
   { name: "TikTok", url: "https://www.tiktok.com" },
 ];
 
-export function Browser() {
-  const [input, setInput] = useState("");
-  const [target, setTarget] = useState<string>("");
-  const [iframeSrc, setIframeSrc] = useState<string>("");
-  const [loading, setLoading] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [cloak] = useCloak();
-  const [provider, setProvider] = useState<ProxyProvider>(cloak.proxy);
+interface Tab {
+  id: string;
+  title: string;
+  input: string;
+  target: string;
+  iframeSrc: string;
+  provider: ProxyProvider;
+  loading: boolean;
+}
 
-  const navigate = (url: string, prov: ProxyProvider = provider) => {
+let nextId = 1;
+const newTab = (provider: ProxyProvider): Tab => ({
+  id: `t${nextId++}`,
+  title: "New tab",
+  input: "",
+  target: "",
+  iframeSrc: "",
+  provider,
+  loading: false,
+});
+
+export function Browser() {
+  const [cloak] = useCloak();
+  const [tabs, setTabs] = useState<Tab[]>(() => [newTab(cloak.proxy)]);
+  const [activeId, setActiveId] = useState<string>(tabs[0].id);
+  const iframes = useRef<Record<string, HTMLIFrameElement | null>>({});
+  const active = tabs.find((t) => t.id === activeId)!;
+
+  const update = (id: string, patch: Partial<Tab>) =>
+    setTabs((arr) => arr.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+
+  const navigate = (id: string, url: string, prov?: ProxyProvider) => {
     if (!url) return;
-    setInput(url);
-    setTarget(url);
-    setProvider(prov);
-    setLoading(true);
-    setIframeSrc(proxify(url, prov));
+    const t = tabs.find((x) => x.id === id);
+    if (!t) return;
+    const provider = prov ?? t.provider;
+    update(id, {
+      input: url, target: url, provider, loading: true,
+      iframeSrc: proxify(url, provider),
+      title: url.replace(/^https?:\/\//, "").split("/")[0] || "Loading…",
+    });
   };
 
-  const onSubmit = (e: React.FormEvent) => { e.preventDefault(); navigate(input); };
+  const onSubmit = (e: React.FormEvent) => { e.preventDefault(); navigate(active.id, active.input); };
 
   const reload = () => {
-    if (iframeRef.current) {
-      setLoading(true);
-      // eslint-disable-next-line no-self-assign
-      iframeRef.current.src = iframeRef.current.src;
-    }
+    const f = iframes.current[active.id];
+    if (!f) return;
+    update(active.id, { loading: true });
+    // eslint-disable-next-line no-self-assign
+    f.src = f.src;
   };
 
   const tryNext = () => {
-    if (!target) return;
-    const i = PROVIDER_FALLBACK_ORDER.indexOf(provider);
+    if (!active.target) return;
+    const i = PROVIDER_FALLBACK_ORDER.indexOf(active.provider);
     const next = PROVIDER_FALLBACK_ORDER[(i + 1) % PROVIDER_FALLBACK_ORDER.length];
-    navigate(target, next);
+    navigate(active.id, active.target, next);
+  };
+
+  const addTab = () => {
+    const t = newTab(cloak.proxy);
+    setTabs((arr) => [...arr, t]);
+    setActiveId(t.id);
+  };
+  const closeTab = (id: string) => {
+    setTabs((arr) => {
+      const next = arr.filter((t) => t.id !== id);
+      if (next.length === 0) {
+        const t = newTab(cloak.proxy);
+        setActiveId(t.id);
+        return [t];
+      }
+      if (id === activeId) setActiveId(next[next.length - 1].id);
+      return next;
+    });
   };
 
   return (
     <div className="flex h-full w-full flex-col bg-background/40">
+      {/* Tab strip */}
+      <div className="flex items-end gap-1 border-b border-white/10 bg-black/30 px-2 pt-2">
+        {tabs.map((t) => (
+          <div key={t.id}
+            onClick={() => setActiveId(t.id)}
+            className={`group flex max-w-[180px] cursor-pointer items-center gap-1.5 rounded-t-md px-3 py-1.5 text-[11px] transition ${
+              t.id === activeId ? "bg-background/60 text-foreground" : "bg-white/5 text-foreground/55 hover:bg-white/10"
+            }`}>
+            <Globe className="h-3 w-3 shrink-0" />
+            <span className="truncate">{t.title}</span>
+            <button onClick={(e) => { e.stopPropagation(); closeTab(t.id); }}
+              className="opacity-50 hover:opacity-100">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        <button onClick={addTab} className="rounded p-1 text-foreground/60 hover:bg-white/10 hover:text-foreground">
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
       {/* Toolbar */}
       <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
         <div className="flex gap-1">
-          <button onClick={() => iframeRef.current?.contentWindow?.history.back()}
+          <button onClick={() => iframes.current[active.id]?.contentWindow?.history.back()}
             className="rounded-md p-1.5 text-foreground/60 hover:bg-white/10 hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
-          <button onClick={() => iframeRef.current?.contentWindow?.history.forward()}
+          <button onClick={() => iframes.current[active.id]?.contentWindow?.history.forward()}
             className="rounded-md p-1.5 text-foreground/60 hover:bg-white/10 hover:text-foreground"><ArrowRight className="h-4 w-4" /></button>
           <button onClick={reload}
             className="rounded-md p-1.5 text-foreground/60 hover:bg-white/10 hover:text-foreground">
-            <RotateCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <RotateCw className={`h-4 w-4 ${active.loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         <form onSubmit={onSubmit} className="flex flex-1 items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 ring-1 ring-white/10 focus-within:ring-white/30 transition">
           <Lock className="h-3.5 w-3.5 text-foreground/60" />
-          <input value={input} onChange={(e) => setInput(e.target.value)}
+          <input value={active.input} onChange={(e) => update(active.id, { input: e.target.value })}
             placeholder="Search the web or enter a URL"
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground/40 outline-none" />
           <Search className="h-4 w-4 text-foreground/40" />
         </form>
 
-        <select value={provider} onChange={(e) => {
+        <select value={active.provider} onChange={(e) => {
             const p = e.target.value as ProxyProvider;
-            setProvider(p);
-            if (target) navigate(target, p);
+            if (active.target) navigate(active.id, active.target, p);
+            else update(active.id, { provider: p });
           }}
           className="max-w-[140px] rounded-md bg-white/5 px-2 py-1.5 text-xs text-foreground/80 outline-none ring-1 ring-white/10 hover:bg-white/10">
           {PROXY_OPTIONS.map(o => <option key={o.id} value={o.id} className="bg-background">{o.label}</option>)}
         </select>
 
-        {target && (
+        {active.target && (
           <button onClick={tryNext}
             title="Try next proxy provider"
             className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1.5 text-xs text-foreground/80 ring-1 ring-white/10 hover:bg-white/10">
@@ -95,20 +159,24 @@ export function Browser() {
 
       {/* Content */}
       <div className="relative flex-1 overflow-hidden">
-        {iframeSrc ? (
-          <>
-            <iframe ref={iframeRef} src={iframeSrc} onLoad={() => setLoading(false)}
-              className="absolute inset-0 h-full w-full bg-white"
-              sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
-              referrerPolicy="no-referrer"
-              title="Proxied web view" />
-            {loading && (
+        {tabs.map((t) => (
+          <div key={t.id} className="absolute inset-0" style={{ visibility: t.id === activeId ? "visible" : "hidden" }}>
+            {t.iframeSrc ? (
+              <iframe ref={(el) => { iframes.current[t.id] = el; }}
+                src={t.iframeSrc}
+                onLoad={() => update(t.id, { loading: false })}
+                className="absolute inset-0 h-full w-full bg-white"
+                sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                referrerPolicy="no-referrer"
+                title="Proxied web view" />
+            ) : (
+              <StartPage onPick={(u) => navigate(t.id, u)} />
+            )}
+            {t.loading && t.id === activeId && (
               <div className="pointer-events-none absolute left-0 top-0 h-0.5 w-1/3 animate-pulse bg-gradient-to-r from-transparent via-white to-transparent" />
             )}
-          </>
-        ) : (
-          <StartPage onPick={(u) => navigate(u)} />
-        )}
+          </div>
+        ))}
       </div>
     </div>
   );
