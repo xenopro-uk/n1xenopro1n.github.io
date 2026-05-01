@@ -150,3 +150,26 @@
   pointer-events: none;
   animation: ripple 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+
+/* Slow vertical autoscroll for the side rail (loops via duplicated content). */
+@keyframes side-rail-scroll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+.side-rail-track {
+  animation: side-rail-scroll 60s linear infinite;
+}
+.side-rail-track:hover {
+  animation-play-state: paused;
+}
+
+/* Wallpaper-adaptive glass surfaces. Falls back to neutral when no wallpaper. */
+.adaptive-glass {
+  background: var(--wp-glass, rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+.adaptive-tint {
+  background: var(--wp-tint, rgba(255, 255, 255, 0.06));
+}
+
