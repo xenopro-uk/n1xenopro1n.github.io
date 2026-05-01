@@ -12,10 +12,6 @@ export type ProxyProvider =
   | "weboas"
   | "blockaway"
   | "novpn"
-  | "ferns"
-  | "voidnetworks"
-  | "lucide"
-  | "koopbin"
   | "googletranslate"
   | "googlecache"
   | "duckduckgo"
@@ -31,10 +27,6 @@ export const PROXY_OPTIONS: ProxyOption[] = [
   { id: "xeno",         label: "Xeno Proxy (recommended)", desc: "Our own server-side proxy. Strips X-Frame and CSP — works on most sites." },
   { id: "scramjet",     label: "Scramjet Engine",          desc: "Service-worker style rewriting routed through our backend." },
   { id: "webcrawler",   label: "WebCrawler",               desc: "Search-and-fetch — finds the page first, then proxies it." },
-  { id: "ferns",        label: "Ferns",                    desc: "Ferns-style relay routed through Xeno proxy." },
-  { id: "voidnetworks", label: "Void Networks",            desc: "Void-style relay routed through Xeno proxy." },
-  { id: "lucide",       label: "Lucide",                   desc: "Lucide-style relay routed through Xeno proxy." },
-  { id: "koopbin",      label: "Koopbin",                  desc: "Koopbin-style relay routed through Xeno proxy." },
   { id: "croxy",        label: "CroxyProxy",               desc: "Reliable general-purpose web proxy." },
   { id: "plainproxies", label: "PlainProxies",             desc: "Fast UK-based web proxy." },
   { id: "hideme",       label: "Hide.me",                  desc: "Privacy-focused web proxy." },
@@ -126,10 +118,6 @@ export function proxify(rawUrl: string, provider: ProxyProvider = "xeno"): strin
     case "xeno":         return `/api/public/proxy?url=${enc}`;
     case "scramjet":     return `/api/public/proxy?engine=scramjet&url=${enc}`;
     case "webcrawler":   return `/api/public/proxy?engine=webcrawler&url=${enc}`;
-    case "ferns":        return `/api/public/proxy?engine=ferns&url=${enc}`;
-    case "voidnetworks": return `/api/public/proxy?engine=void&url=${enc}`;
-    case "lucide":       return `/api/public/proxy?engine=lucide&url=${enc}`;
-    case "koopbin":      return `/api/public/proxy?engine=koopbin&url=${enc}`;
     case "direct":       return url;
     case "duckduckgo":   return `https://duckduckgo.com/?q=${enc}`;
     case "plainproxies": return `https://plainproxies.com/api/v2?url=${enc}`;

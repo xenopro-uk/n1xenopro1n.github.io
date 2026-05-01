@@ -13,8 +13,10 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LoadingRouteImport } from './routes/loading'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicYoutubeRouteImport } from './routes/api/public/youtube'
 import { Route as ApiPublicSpotifyRouteImport } from './routes/api/public/spotify'
 import { Route as ApiPublicProxyRouteImport } from './routes/api/public/proxy'
+import { Route as ApiPublicGnMathRouteImport } from './routes/api/public/gn-math'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -36,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicYoutubeRoute = ApiPublicYoutubeRouteImport.update({
+  id: '/api/public/youtube',
+  path: '/api/public/youtube',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSpotifyRoute = ApiPublicSpotifyRouteImport.update({
   id: '/api/public/spotify',
   path: '/api/public/spotify',
@@ -46,22 +53,31 @@ const ApiPublicProxyRoute = ApiPublicProxyRouteImport.update({
   path: '/api/public/proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicGnMathRoute = ApiPublicGnMathRouteImport.update({
+  id: '/api/public/gn-math',
+  path: '/api/public/gn-math',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/loading': typeof LoadingRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/gn-math': typeof ApiPublicGnMathRoute
   '/api/public/proxy': typeof ApiPublicProxyRoute
   '/api/public/spotify': typeof ApiPublicSpotifyRoute
+  '/api/public/youtube': typeof ApiPublicYoutubeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/loading': typeof LoadingRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/gn-math': typeof ApiPublicGnMathRoute
   '/api/public/proxy': typeof ApiPublicProxyRoute
   '/api/public/spotify': typeof ApiPublicSpotifyRoute
+  '/api/public/youtube': typeof ApiPublicYoutubeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,8 +85,10 @@ export interface FileRoutesById {
   '/loading': typeof LoadingRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/gn-math': typeof ApiPublicGnMathRoute
   '/api/public/proxy': typeof ApiPublicProxyRoute
   '/api/public/spotify': typeof ApiPublicSpotifyRoute
+  '/api/public/youtube': typeof ApiPublicYoutubeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -79,24 +97,30 @@ export interface FileRouteTypes {
     | '/loading'
     | '/login'
     | '/reset-password'
+    | '/api/public/gn-math'
     | '/api/public/proxy'
     | '/api/public/spotify'
+    | '/api/public/youtube'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/loading'
     | '/login'
     | '/reset-password'
+    | '/api/public/gn-math'
     | '/api/public/proxy'
     | '/api/public/spotify'
+    | '/api/public/youtube'
   id:
     | '__root__'
     | '/'
     | '/loading'
     | '/login'
     | '/reset-password'
+    | '/api/public/gn-math'
     | '/api/public/proxy'
     | '/api/public/spotify'
+    | '/api/public/youtube'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -104,8 +128,10 @@ export interface RootRouteChildren {
   LoadingRoute: typeof LoadingRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicGnMathRoute: typeof ApiPublicGnMathRoute
   ApiPublicProxyRoute: typeof ApiPublicProxyRoute
   ApiPublicSpotifyRoute: typeof ApiPublicSpotifyRoute
+  ApiPublicYoutubeRoute: typeof ApiPublicYoutubeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/youtube': {
+      id: '/api/public/youtube'
+      path: '/api/public/youtube'
+      fullPath: '/api/public/youtube'
+      preLoaderRoute: typeof ApiPublicYoutubeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/spotify': {
       id: '/api/public/spotify'
       path: '/api/public/spotify'
@@ -152,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/gn-math': {
+      id: '/api/public/gn-math'
+      path: '/api/public/gn-math'
+      fullPath: '/api/public/gn-math'
+      preLoaderRoute: typeof ApiPublicGnMathRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -160,8 +200,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoadingRoute: LoadingRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicGnMathRoute: ApiPublicGnMathRoute,
   ApiPublicProxyRoute: ApiPublicProxyRoute,
   ApiPublicSpotifyRoute: ApiPublicSpotifyRoute,
+  ApiPublicYoutubeRoute: ApiPublicYoutubeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
