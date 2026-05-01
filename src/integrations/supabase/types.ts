@@ -74,6 +74,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_positions: {
+        Row: {
+          app_id: string
+          updated_at: string
+          user_id: string
+          x: number
+          y: number
+        }
+        Insert: {
+          app_id: string
+          updated_at?: string
+          user_id: string
+          x: number
+          y: number
+        }
+        Update: {
+          app_id?: string
+          updated_at?: string
+          user_id?: string
+          x?: number
+          y?: number
+        }
+        Relationships: []
+      }
       bans: {
         Row: {
           banned_by: string | null
@@ -125,6 +149,33 @@ export type Database = {
           id?: string
           style?: string
           title?: string
+        }
+        Relationships: []
+      }
+      game_ratings: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          stars: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          stars: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          stars?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
