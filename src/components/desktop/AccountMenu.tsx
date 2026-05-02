@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { User as UserIcon, LogIn, LogOut, UserPlus, Loader2, KeyRound } from "lucide-react";
 import { useAccount, signIn, signUp, signOut, resetPassword } from "@/lib/account";
-import { isGuest } from "@/lib/auth-gate";
 import { toast } from "sonner";
 
 export function AccountMenu() {
@@ -35,9 +34,7 @@ export function AccountMenu() {
     setForgot(false);
   };
 
-  const display = profile?.display_name || user?.email?.split("@")[0]
-    || (typeof window !== "undefined" && isGuest() ? "Guest" : "Account");
-  const guestMode = !user && typeof window !== "undefined" && isGuest();
+  const display = profile?.display_name || user?.email?.split("@")[0] || "Account";
 
   return (
     <div className="relative">
@@ -45,7 +42,6 @@ export function AccountMenu() {
         className="flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs text-foreground/70 ring-1 ring-white/10 hover:bg-white/10">
         <UserIcon className="h-3 w-3" />
         {display}
-        {guestMode && <span className="rounded bg-white/10 px-1 py-0.5 text-[9px] text-foreground/50">GUEST</span>}
         {isAdmin && <span className="rounded bg-white px-1 py-0.5 text-[9px] font-bold text-black">DEV</span>}
       </button>
 
