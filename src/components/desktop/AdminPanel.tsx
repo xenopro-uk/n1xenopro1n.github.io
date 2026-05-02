@@ -116,11 +116,9 @@ export function AdminPanel() {
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
         <Shield className="h-4 w-4" />
         <span className="text-sm font-medium">Dev Panel</span>
-        {!hasDbWrite && (
-          <span className="ml-auto rounded-full bg-yellow-500/10 px-2 py-0.5 text-[10px] text-yellow-300 ring-1 ring-yellow-500/20">
-            Sign in with the dev account in the menu bar to publish
-          </span>
-        )}
+        <span className="ml-auto rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300 ring-1 ring-emerald-500/20">
+          admin · {user?.email}
+        </span>
       </div>
 
       <div className="flex gap-1 border-b border-white/10 px-3 py-1.5">
