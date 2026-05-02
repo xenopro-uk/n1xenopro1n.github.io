@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Globe, Gamepad2, Sparkles, Newspaper,
   Settings as SettingsIcon, Film, Music, Calculator as CalcIcon,
@@ -23,11 +23,15 @@ import { BroadcastBanner } from "@/components/desktop/BroadcastBanner";
 import { HUD } from "@/components/desktop/HUD";
 import { WallpaperLayer } from "@/components/desktop/WallpaperLayer";
 import { DesktopContextMenu } from "@/components/desktop/DesktopContextMenu";
+import { SideRail } from "@/components/desktop/SideRail";
 import { useCloak } from "@/lib/cloak";
-import { isAuthed, isDevGate, clearAuthed } from "@/lib/auth-gate";
+import { isAuthed, clearAuthed } from "@/lib/auth-gate";
 import { useAccount } from "@/lib/account";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/lib/surveillance";
+import { usePresenceHeartbeat } from "@/lib/presence";
+import { useAdaptiveTheme } from "@/lib/adaptive-theme";
+import { useAppPositions } from "@/lib/app-positions";
 
 export const Route = createFileRoute("/")({
   component: Desktop,
@@ -40,7 +44,7 @@ export const Route = createFileRoute("/")({
 });
 
 type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "admin";
-interface AppDef { id: AppId; label: string; icon: typeof Globe; devOnly?: boolean }
+interface AppDef { id: AppId; label: string; icon: typeof Globe; adminOnly?: boolean }
 
 const APPS: AppDef[] = [
   { id: "browser",  label: "Xeno's Proxy",    icon: Globe },
@@ -51,8 +55,25 @@ const APPS: AppDef[] = [
   { id: "news",     label: "Xeno's Wire",     icon: Newspaper },
   { id: "calc",     label: "Xeno's Calc",     icon: CalcIcon },
   { id: "settings", label: "Xeno's Cloak",    icon: SettingsIcon },
-  { id: "admin",    label: "Xeno's Dev",      icon: Shield, devOnly: true },
+  { id: "admin",    label: "Xeno's Dev",      icon: Shield, adminOnly: true },
 ];
+
+// iPhone-style default grid layout — to the right of the SideRail.
+const ICON_W = 88;
+const ICON_H = 96;
+const GRID_LEFT = 200; // SideRail is 176px (w-44) + small gap
+const GRID_TOP = 90;   // below the top-right utilities bar
+
+function defaultLayout(ids: string[]): Record<string, { x: number; y: number }> {
+  const out: Record<string, { x: number; y: number }> = {};
+  const cols = 3;
+  ids.forEach((id, i) => {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    out[id] = { x: GRID_LEFT + c * ICON_W, y: GRID_TOP + r * ICON_H };
+  });
+  return out;
+}
 
 function Desktop() {
   const navigate = useNavigate();
@@ -61,15 +82,17 @@ function Desktop() {
   const [cloak] = useCloak();
   const bgRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
-  const [dev, setDev] = useState(false);
   const { user, isAdmin } = useAccount();
   const [banned, setBanned] = useState<string | null>(null);
 
+  usePresenceHeartbeat();
+  useAdaptiveTheme();
+  const { positions, setPosition } = useAppPositions();
+
   useEffect(() => {
     if (!isAuthed()) { navigate({ to: "/login" }); return; }
-    setDev(isDevGate());
     setReady(true);
-    void logActivity("session.start", "desktop", { dev: isDevGate() });
+    void logActivity("session.start", "desktop", {});
   }, [navigate]);
 
   useEffect(() => {
@@ -77,6 +100,18 @@ function Desktop() {
     supabase.from("bans").select("reason").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => { if (data) setBanned(data.reason || "You have been banned."); });
   }, [user]);
+
+  const visibleApps = useMemo(
+    () => APPS.filter((a) => !a.adminOnly || isAdmin),
+    [isAdmin],
+  );
+  const layout = useMemo(() => {
+    const def = defaultLayout(visibleApps.map((a) => a.id));
+    // Merge with persisted positions
+    return Object.fromEntries(
+      visibleApps.map((a) => [a.id, positions[a.id] ?? def[a.id]]),
+    );
+  }, [visibleApps, positions]);
 
   const handleBgClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;
@@ -90,8 +125,6 @@ function Desktop() {
 
   const signOut = () => { clearAuthed(); navigate({ to: "/login" }); };
   const brand = cloak.tabTitle || "XenoPro";
-  const showDev = dev || isAdmin;
-  const visibleApps = APPS.filter((a) => !a.devOnly || showDev);
 
   if (!ready) return null;
 
@@ -117,6 +150,7 @@ function Desktop() {
       <WallpaperLayer />
       <BroadcastBanner />
       <HUD />
+      <SideRail />
       <DesktopContextMenu
         onChangeWallpaper={() => { setSettingsTab("wallpaper"); setOpenApp("settings"); }}
         onOpenProxy={() => setOpenApp("browser")}
@@ -137,7 +171,7 @@ function Desktop() {
       </div>
 
       {/* Top-right utilities */}
-      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+      <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
         <AccountMenu />
         <button onClick={signOut}
           className="flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-xs text-foreground/70 ring-1 ring-white/10 hover:bg-white/10">
@@ -145,12 +179,18 @@ function Desktop() {
         </button>
       </div>
 
-      <div className="relative z-10 grid max-h-[calc(100vh-6rem)] w-fit grid-cols-2 gap-1 p-4 pt-16 sm:p-6 sm:pt-16">
-        {visibleApps.map((app) => (
-          <AppIcon key={app.id} icon={app.icon} label={app.label}
-            accent="oklch(0.85 0 0)"
-            onClick={() => { void logActivity("app.open", app.id, { label: app.label }); setOpenApp(app.id); }} />
-        ))}
+      {/* Draggable iPhone-style home grid */}
+      <div className="relative z-10 h-full w-full">
+        {visibleApps.map((app) => {
+          const pos = layout[app.id];
+          return (
+            <AppIcon key={app.id} icon={app.icon} label={app.label}
+              accent="oklch(0.85 0 0)"
+              x={pos.x} y={pos.y}
+              onMove={(x, y) => setPosition(app.id, { x, y })}
+              onClick={() => { void logActivity("app.open", app.id, { label: app.label }); setOpenApp(app.id); }} />
+          );
+        })}
       </div>
 
       {openApp && (

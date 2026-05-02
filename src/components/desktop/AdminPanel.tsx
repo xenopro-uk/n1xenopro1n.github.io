@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Megaphone, Ban, Trash2, Send, Shield, Loader2, Eye, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccount } from "@/lib/account";
-import { isDevGate } from "@/lib/auth-gate";
 import { toast } from "sonner";
 
 interface BroadcastRow {
@@ -20,7 +19,6 @@ interface ActivityRow {
 
 export function AdminPanel() {
   const { isAdmin, user } = useAccount();
-  const devGate = typeof window !== "undefined" && isDevGate();
   const hasDbWrite = isAdmin;
 
   const [tab, setTab] = useState<"broadcast" | "users" | "surveillance">("broadcast");
@@ -109,8 +107,8 @@ export function AdminPanel() {
     loadActivity();
   };
 
-  if (!devGate && !isAdmin) {
-    return <div className="p-8 text-center text-sm text-foreground/50">Admin access only.</div>;
+  if (!isAdmin) {
+    return <div className="p-8 text-center text-sm text-foreground/50">Admin access only. Sign in with the dev account from the menu in the top-right corner.</div>;
   }
 
   return (
@@ -118,11 +116,9 @@ export function AdminPanel() {
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
         <Shield className="h-4 w-4" />
         <span className="text-sm font-medium">Dev Panel</span>
-        {!hasDbWrite && (
-          <span className="ml-auto rounded-full bg-yellow-500/10 px-2 py-0.5 text-[10px] text-yellow-300 ring-1 ring-yellow-500/20">
-            Sign in with the dev account in the menu bar to publish
-          </span>
-        )}
+        <span className="ml-auto rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300 ring-1 ring-emerald-500/20">
+          admin · {user?.email}
+        </span>
       </div>
 
       <div className="flex gap-1 border-b border-white/10 px-3 py-1.5">

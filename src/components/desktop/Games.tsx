@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Gamepad2, Search, ArrowLeft } from "lucide-react";
+import { Gamepad2, Search, ArrowLeft, Cpu, Globe } from "lucide-react";
 import { GAMES, CATEGORIES, type GameDef, type EngineId } from "./games/data";
 import {
   SnakeEngine, PongEngine, Game2048Engine, MemoryEngine, BreakoutEngine,
@@ -9,6 +9,8 @@ import {
   LightsOutEngine, HangmanEngine, RPSEngine,
 } from "./games/engines";
 import { logActivity } from "@/lib/surveillance";
+import { WebGames } from "./games/WebGames";
+import { GameRating } from "./games/GameRating";
 
 const ENGINES: Record<EngineId, React.ComponentType<{ config: Record<string, number | string | boolean>; gameId: string }>> = {
   snake: SnakeEngine,
@@ -46,6 +48,7 @@ export function Games() {
   const [active, setActive] = useState<GameDef | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
+  const [tab, setTab] = useState<"native" | "web">("native");
 
   const filtered = useMemo(() => GAMES.filter((g) =>
     (cat === "All" || g.category === cat) &&
@@ -65,6 +68,7 @@ export function Games() {
           <span className="ml-2 rounded bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground/50">
             {active.category}
           </span>
+          <div className="ml-auto"><GameRating gameId={active.id} /></div>
         </div>
         <div className="flex-1 overflow-auto">
           <Engine config={active.config ?? {}} gameId={active.id} />
@@ -73,8 +77,18 @@ export function Games() {
     );
   }
 
+  if (tab === "web") {
+    return (
+      <div className="flex h-full flex-col bg-background/40">
+        <TabStrip tab={tab} setTab={setTab} />
+        <div className="flex-1 overflow-hidden"><WebGames /></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full flex-col bg-background/40">
+      <TabStrip tab={tab} setTab={setTab} />
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
         <Gamepad2 className="h-4 w-4" />
         <span className="text-sm font-medium">Xeno's Arcade — {GAMES.length} games · in-site</span>
@@ -109,7 +123,7 @@ export function Games() {
               <div className="flex flex-1 flex-col gap-0.5 p-2">
                 <span className="line-clamp-1 text-xs font-medium">{g.name}</span>
                 <span className="text-[10px] uppercase tracking-wider text-foreground/40">{g.category}</span>
-                {g.blurb && <span className="line-clamp-1 text-[10px] text-foreground/50">{g.blurb}</span>}
+                <GameRating gameId={g.id} compact />
               </div>
             </button>
           ))}
@@ -118,6 +132,25 @@ export function Games() {
           <div className="py-16 text-center text-sm text-foreground/40">No games match your search.</div>
         )}
       </div>
+    </div>
+  );
+}
+
+function TabStrip({ tab, setTab }: { tab: "native" | "web"; setTab: (t: "native" | "web") => void }) {
+  return (
+    <div className="flex gap-1 border-b border-white/10 bg-black/20 px-3 py-1.5">
+      <button onClick={() => setTab("native")}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs transition ${
+          tab === "native" ? "bg-white text-black" : "text-foreground/60 hover:bg-white/5"
+        }`}>
+        <Cpu className="h-3 w-3" /> Built-in
+      </button>
+      <button onClick={() => setTab("web")}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs transition ${
+          tab === "web" ? "bg-white text-black" : "text-foreground/60 hover:bg-white/5"
+        }`}>
+        <Globe className="h-3 w-3" /> Web Games
+      </button>
     </div>
   );
 }
