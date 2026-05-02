@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Wifi, Signal, Battery, Globe } from "lucide-react";
+import { Wifi, Signal, Battery, Globe, Users, ShieldCheck } from "lucide-react";
+import { useOnlineCount } from "@/lib/presence";
 
 export function Taskbar({ onLaunchBrowser }: { onLaunchBrowser: () => void }) {
   const [time, setTime] = useState<Date | null>(null);
+  const online = useOnlineCount();
 
   useEffect(() => {
     setTime(new Date());
@@ -14,10 +16,10 @@ export function Taskbar({ onLaunchBrowser }: { onLaunchBrowser: () => void }) {
   const d = time ? time.toLocaleDateString([], { month: "short", day: "numeric" }) : "";
 
   return (
-    <div className="pointer-events-auto absolute bottom-4 left-1/2 z-40 -translate-x-1/2">
+    <div data-noctx className="pointer-events-auto absolute bottom-4 left-1/2 z-40 -translate-x-1/2">
       <div className="flex items-center gap-2 rounded-full glass-strong px-3 py-2 shadow-[0_20px_50px_-20px_oklch(0_0_0/0.6)]">
         <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground transition hover:scale-105">
-          <span className="text-sm font-bold">O</span>
+          <span className="text-sm font-bold">X</span>
         </button>
         <div className="h-6 w-px bg-white/10" />
         <button
@@ -27,6 +29,19 @@ export function Taskbar({ onLaunchBrowser }: { onLaunchBrowser: () => void }) {
         >
           <Globe className="h-4 w-4" />
         </button>
+        <div className="h-6 w-px bg-white/10" />
+
+        {/* Online users + proxy health */}
+        <div className="flex items-center gap-2 px-2 text-[11px] text-foreground/70">
+          <span className="flex items-center gap-1" title={`${online} online now`}>
+            <Users className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="font-medium">{online}</span>
+          </span>
+          <span className="flex items-center gap-1 rounded-full bg-emerald-400/10 px-1.5 py-0.5 text-[10px] text-emerald-300 ring-1 ring-emerald-400/20" title="Proxy is online">
+            <ShieldCheck className="h-3 w-3" /> proxy ok
+          </span>
+        </div>
+
         <div className="h-6 w-px bg-white/10" />
         <div className="flex items-center gap-2 px-2 text-[11px] text-foreground/70">
           <Signal className="h-3.5 w-3.5" />
