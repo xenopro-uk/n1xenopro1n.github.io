@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Gamepad2, Search, ArrowLeft } from "lucide-react";
+import { Gamepad2, Search, ArrowLeft, Cpu, Globe } from "lucide-react";
 import { GAMES, CATEGORIES, type GameDef, type EngineId } from "./games/data";
 import {
   SnakeEngine, PongEngine, Game2048Engine, MemoryEngine, BreakoutEngine,
@@ -9,6 +9,8 @@ import {
   LightsOutEngine, HangmanEngine, RPSEngine,
 } from "./games/engines";
 import { logActivity } from "@/lib/surveillance";
+import { WebGames } from "./games/WebGames";
+import { GameRating } from "./games/GameRating";
 
 const ENGINES: Record<EngineId, React.ComponentType<{ config: Record<string, number | string | boolean>; gameId: string }>> = {
   snake: SnakeEngine,
@@ -46,6 +48,7 @@ export function Games() {
   const [active, setActive] = useState<GameDef | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
+  const [tab, setTab] = useState<"native" | "web">("native");
 
   const filtered = useMemo(() => GAMES.filter((g) =>
     (cat === "All" || g.category === cat) &&
@@ -65,10 +68,20 @@ export function Games() {
           <span className="ml-2 rounded bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground/50">
             {active.category}
           </span>
+          <div className="ml-auto"><GameRating gameId={active.id} /></div>
         </div>
         <div className="flex-1 overflow-auto">
           <Engine config={active.config ?? {}} gameId={active.id} />
         </div>
+      </div>
+    );
+  }
+
+  if (tab === "web") {
+    return (
+      <div className="flex h-full flex-col bg-background/40">
+        <TabStrip tab={tab} setTab={setTab} />
+        <div className="flex-1 overflow-hidden"><WebGames /></div>
       </div>
     );
   }
