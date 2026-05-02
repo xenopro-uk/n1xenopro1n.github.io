@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Megaphone, Ban, Trash2, Send, Shield, Loader2, Eye, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccount } from "@/lib/account";
-import { isDevGate } from "@/lib/auth-gate";
 import { toast } from "sonner";
 
 interface BroadcastRow {
@@ -20,7 +19,6 @@ interface ActivityRow {
 
 export function AdminPanel() {
   const { isAdmin, user } = useAccount();
-  const devGate = typeof window !== "undefined" && isDevGate();
   const hasDbWrite = isAdmin;
 
   const [tab, setTab] = useState<"broadcast" | "users" | "surveillance">("broadcast");
@@ -109,8 +107,8 @@ export function AdminPanel() {
     loadActivity();
   };
 
-  if (!devGate && !isAdmin) {
-    return <div className="p-8 text-center text-sm text-foreground/50">Admin access only.</div>;
+  if (!isAdmin) {
+    return <div className="p-8 text-center text-sm text-foreground/50">Admin access only. Sign in with the dev account from the menu in the top-right corner.</div>;
   }
 
   return (
