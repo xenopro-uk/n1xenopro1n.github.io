@@ -27,7 +27,6 @@ export function WallpaperLayer() {
         muted
         playsInline
         loop={wallpaper.loop}
-        crossOrigin="anonymous"
         data-wallpaper
         className="pointer-events-none fixed inset-0 -z-10 h-full w-full object-cover"
       />
