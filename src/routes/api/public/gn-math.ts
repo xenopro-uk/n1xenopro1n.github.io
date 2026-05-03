@@ -1,8 +1,6 @@
-// Lists games available from the gn-math/html GitHub repo (owner-permitted import).
+// Lists games from the gn-math/html GitHub repo (owner-permitted import).
+// Each game is a single .html file at the repo root, served by gn-math.github.io/html/<file>.
 // GET /api/public/gn-math -> { items: { id, name, url, thumb }[] }
-//
-// Fetches the GitHub tree once, caches in-memory at the edge, and returns a
-// playable URL routed through our existing proxy so iframes always render.
 import { createFileRoute } from "@tanstack/react-router";
 
 const CORS = {
@@ -18,13 +16,11 @@ const json = (b: unknown, s = 200) =>
 
 interface Tree { tree: { path: string; type: string }[]; }
 
-const RAW_BASE = "https://gn-math.github.io";
-// the gn-math/html pages site lives at gn-math.github.io and serves each game folder
+const RAW_BASE = "https://gn-math.github.io/html";
 
-function nameOf(folder: string): string {
-  return folder
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+function nameOf(file: string): string {
+  const stem = file.replace(/\.html?$/i, "");
+  return stem.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export const Route = createFileRoute("/api/public/gn-math")({
@@ -38,14 +34,16 @@ export const Route = createFileRoute("/api/public/gn-math")({
           });
           if (!r.ok) return json({ error: `gh ${r.status}`, items: [] }, 502);
           const t = await r.json() as Tree;
-          const folders = t.tree
-            .filter((n) => n.type === "tree" && !n.path.startsWith(".") && !["node_modules", "assets"].includes(n.path))
-            .map((n) => n.path);
-          const items = folders.map((f) => ({
+          const files = t.tree
+            .filter((n) => n.type === "blob" && /\.html?$/i.test(n.path) && !n.path.includes("/"))
+            .filter((n) => !["index.html", "404.html"].includes(n.path.toLowerCase()))
+            .map((n) => n.path)
+            .sort();
+          const items = files.map((f) => ({
             id: `gn-${f}`,
             name: nameOf(f),
-            url: `${RAW_BASE}/${f}/`,
-            thumb: `${RAW_BASE}/${f}/thumb.png`,
+            url: `${RAW_BASE}/${f}`,
+            thumb: "",
           }));
           return json({ items });
         } catch (e) {

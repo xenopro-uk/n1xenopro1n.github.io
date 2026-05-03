@@ -6,16 +6,19 @@ interface AppIconProps {
   label: string;
   onClick?: () => void;
   accent?: string;
-  /** Absolute positioning when provided (iPhone-style draggable layout). */
+  /** Absolute positioning when provided. */
   x?: number;
   y?: number;
+  /** Called continuously while dragging (raw coords). */
   onMove?: (x: number, y: number) => void;
+  /** Called once on pointer up with final coords (parent should snap + collide). */
+  onDrop?: (x: number, y: number) => void;
 }
 
-export function AppIcon({ icon: Icon, label, onClick, accent, x, y, onMove }: AppIconProps) {
+export function AppIcon({ icon: Icon, label, onClick, accent, x, y, onMove, onDrop }: AppIconProps) {
   const draggable = typeof x === "number" && typeof y === "number" && !!onMove;
   const ref = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ dx: number; dy: number; moved: boolean } | null>(null);
+  const drag = useRef<{ dx: number; dy: number; moved: boolean; lastX: number; lastY: number } | null>(null);
   const [hover, setHover] = useState(false);
 
   useEffect(() => {
@@ -25,20 +28,26 @@ export function AppIcon({ icon: Icon, label, onClick, accent, x, y, onMove }: Ap
       const nx = ev.clientX - drag.current.dx;
       const ny = ev.clientY - drag.current.dy;
       if (Math.abs(nx - (x ?? 0)) > 3 || Math.abs(ny - (y ?? 0)) > 3) drag.current.moved = true;
-      onMove?.(Math.max(8, Math.min(window.innerWidth - 80, nx)), Math.max(60, Math.min(window.innerHeight - 100, ny)));
+      const cx = Math.max(8, Math.min(window.innerWidth - 80, nx));
+      const cy = Math.max(60, Math.min(window.innerHeight - 100, ny));
+      drag.current.lastX = cx; drag.current.lastY = cy;
+      onMove?.(cx, cy);
     };
-    const onUp = () => { drag.current = null; };
+    const onUp = () => {
+      if (drag.current?.moved) onDrop?.(drag.current.lastX, drag.current.lastY);
+      drag.current = null;
+    };
     window.addEventListener("pointermove", onMoveEv);
     window.addEventListener("pointerup", onUp);
     return () => {
       window.removeEventListener("pointermove", onMoveEv);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [draggable, onMove, x, y]);
+  }, [draggable, onMove, onDrop, x, y]);
 
   const start = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!draggable) return;
-    drag.current = { dx: e.clientX - (x ?? 0), dy: e.clientY - (y ?? 0), moved: false };
+    drag.current = { dx: e.clientX - (x ?? 0), dy: e.clientY - (y ?? 0), moved: false, lastX: x ?? 0, lastY: y ?? 0 };
   };
   const handleClick = () => {
     if (drag.current?.moved) return;
@@ -70,7 +79,7 @@ export function AppIcon({ icon: Icon, label, onClick, accent, x, y, onMove }: Ap
       onPointerDown={start}
       onPointerEnter={() => setHover(true)}
       onPointerLeave={() => setHover(false)}
-      style={{ position: "absolute", left: x, top: y, touchAction: "none", cursor: hover ? "grab" : undefined }}
+      style={{ position: "absolute", left: x, top: y, touchAction: "none", cursor: hover ? "grab" : undefined, zIndex: 10 }}
     >
       {inner}
     </div>

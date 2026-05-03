@@ -3,7 +3,6 @@
 // /api/public/proxy so the source URL is hidden from inspect.
 import { useEffect, useState } from "react";
 import { ArrowLeft, Search, Loader2 } from "lucide-react";
-import { proxify } from "@/lib/cloak";
 import { logActivity } from "@/lib/surveillance";
 import { GameRating } from "./GameRating";
 
@@ -43,13 +42,14 @@ export function WebGames() {
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
           <span className="text-sm font-medium">{active.name}</span>
-          <span className="ml-2 rounded bg-white/5 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground/50">Web</span>
           <div className="ml-auto"><GameRating gameId={active.id} /></div>
         </div>
         <iframe
-          src={proxify(active.url)}
-          className="flex-1 bg-white"
-          sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
+          src={active.url}
+          className="flex-1 bg-black"
+          allow="autoplay; fullscreen; gamepad; pointer-lock"
+          allowFullScreen
+          sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts allow-pointer-lock allow-downloads"
           referrerPolicy="no-referrer"
           title={active.name}
         />
@@ -61,7 +61,7 @@ export function WebGames() {
     <div className="flex h-full flex-col bg-background/40">
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
         <span className="text-sm font-medium">
-          Web games · {loading ? "loading…" : `${items.length} titles`}
+          Games · {loading ? "loading…" : `${items.length} titles`}
         </span>
         <div className="ml-auto flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">
           <Search className="h-3.5 w-3.5 text-foreground/40" />
