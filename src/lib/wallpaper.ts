@@ -18,47 +18,45 @@ export interface CuratedWallpaper {
   thumb: string;
   url: string;
   kind: WallpaperKind;
-  category: "anime" | "gaming" | "abstract" | "nature";
+  category: "anime" | "marvel" | "abstract" | "minecraft";
 }
 
-// Curated wallpapers — pexels videos and images (CORS + hotlink friendly).
-const px = (id: string, w = 1920) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&w=${w}`;
-const pxv = (id: string, file: string) => `https://videos.pexels.com/video-files/${id}/${file}`;
+// Motionbgs 4K direct mp4 sources (live wallpaper feed).
+const mb = (id: string, slug: string) =>
+  `https://motionbgs.com/media/${id}/${slug}.3840x2160.mp4`;
+const mbThumb = (id: string, slug: string) =>
+  `https://motionbgs.com/i/c/640x360/media/${id}/${slug}.jpg`;
 
 export const CURATED: CuratedWallpaper[] = [
-  // Anime / Aesthetic vibes
-  { id: "anime-night", label: "Anime Night", category: "anime", kind: "video",
-    thumb: px("2693212", 400), url: pxv("2887463", "2887463-hd_1920_1080_25fps.mp4") },
-  { id: "neon-rain", label: "Neon Rain", category: "anime", kind: "video",
-    thumb: px("2693529", 400), url: pxv("2491284", "2491284-uhd_2560_1440_24fps.mp4") },
-  { id: "tokyo-street", label: "Tokyo Street", category: "anime", kind: "video",
-    thumb: px("2614818", 400), url: pxv("3015527", "3015527-hd_1920_1080_24fps.mp4") },
-  { id: "sakura", label: "Sakura Drift", category: "anime", kind: "image",
-    thumb: px("1408221", 400), url: px("1408221") },
+  // Anime
+  { id: "miku-star-eyes", label: "Hatsune Miku Star Eyes", category: "anime", kind: "video",
+    thumb: mbThumb("9465", "hatsune-miku-star-eyes"), url: mb("9465", "hatsune-miku-star-eyes") },
+  { id: "miku-nakano", label: "Miku Nakano Manga", category: "anime", kind: "video",
+    thumb: mbThumb("4552", "miku-nakano-manga"), url: mb("4552", "miku-nakano-manga") },
+  { id: "girl-curtains", label: "Girl Behind Curtains", category: "anime", kind: "video",
+    thumb: mbThumb("8925", "girl-behind-curtains-3"), url: mb("8925", "girl-behind-curtains-3") },
+  { id: "gojo-vs-sukuna", label: "Gojo vs Sukuna", category: "anime", kind: "video",
+    thumb: "/wallpapers/gojo-vs-sukuna.jpg", url: "/wallpapers/gojo-vs-sukuna.mp4" },
+  { id: "wallhack-sora", label: "Sora Awakening", category: "anime", kind: "video",
+    thumb: "/wallpapers/wallhack-awakening-sora.jpg", url: "/wallpapers/wallhack-awakening-sora.mp4" },
 
-  // Gaming
-  { id: "god-of-war", label: "Warrior", category: "gaming", kind: "video",
-    thumb: px("3617457", 400), url: pxv("3045163", "3045163-hd_1920_1080_24fps.mp4") },
-  { id: "cyberpunk", label: "Cyber City", category: "gaming", kind: "video",
-    thumb: px("3052361", 400), url: pxv("2887463", "2887463-hd_1920_1080_25fps.mp4") },
-  { id: "neon-arena", label: "Neon Arena", category: "gaming", kind: "image",
-    thumb: px("2110951", 400), url: px("2110951") },
+  // Marvel / Heroes
+  { id: "ss-black-silence", label: "Silver Surfer · Black Silence", category: "marvel", kind: "video",
+    thumb: mbThumb("9079", "silver-surfer-black-silence"), url: mb("9079", "silver-surfer-black-silence") },
+  { id: "ss-cosmic-void", label: "Silver Surfer · Cosmic Void", category: "marvel", kind: "video",
+    thumb: mbThumb("9078", "silver-surfer-cosmic-void"), url: mb("9078", "silver-surfer-cosmic-void") },
 
   // Abstract
-  { id: "particles", label: "Particles", category: "abstract", kind: "video",
-    thumb: px("1146134", 400), url: pxv("3045163", "3045163-hd_1920_1080_24fps.mp4") },
-  { id: "liquid", label: "Liquid Ink", category: "abstract", kind: "video",
-    thumb: px("1342460", 400), url: pxv("3214448", "3214448-hd_1920_1080_25fps.mp4") },
-  { id: "neon-grid", label: "Neon Grid", category: "abstract", kind: "image",
-    thumb: px("2832382", 400), url: px("2832382") },
+  { id: "windows-glitch", label: "Windows Glitch Logo", category: "abstract", kind: "video",
+    thumb: mbThumb("1937", "windows-glitch-logo"), url: mb("1937", "windows-glitch-logo") },
+  { id: "gravity-abyss", label: "Gravity's Dark Abyss", category: "abstract", kind: "video",
+    thumb: mbThumb("7010", "gravitys-dark-abyss"), url: mb("7010", "gravitys-dark-abyss") },
+  { id: "celestial-veil", label: "Celestial Veil", category: "abstract", kind: "video",
+    thumb: "/wallpapers/celestial-veil.jpg", url: "/wallpapers/celestial-veil.mp4" },
 
-  // Nature
-  { id: "mountain", label: "Mountain", category: "nature", kind: "image",
-    thumb: px("417074", 400), url: px("417074") },
-  { id: "ocean", label: "Ocean Waves", category: "nature", kind: "video",
-    thumb: px("355288", 400), url: pxv("1093662", "1093662-hd_1920_1080_30fps.mp4") },
-  { id: "forest", label: "Forest", category: "nature", kind: "image",
-    thumb: px("38136", 400), url: px("38136") },
+  // Minecraft / nature
+  { id: "mc-northern", label: "Minecraft Northern Lights", category: "minecraft", kind: "video",
+    thumb: "/wallpapers/minecraft-northern-light.jpg", url: "/wallpapers/minecraft-northern-light.mp4" },
 ];
 
 const DEFAULT: Wallpaper | null = null;
@@ -77,7 +75,6 @@ export function useWallpaper() {
   const [wp, setWp] = useState<Wallpaper | null>(() => readLocal());
   const [loading, setLoading] = useState(true);
 
-  // Hydrate from cloud on mount
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -107,7 +104,6 @@ export function useWallpaper() {
   return { wallpaper: wp, setWallpaper: save, loading };
 }
 
-// Upload a file to the `wallpapers` storage bucket
 export async function uploadWallpaperFile(file: File): Promise<{ url: string; kind: WallpaperKind }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Sign in to upload wallpapers.");

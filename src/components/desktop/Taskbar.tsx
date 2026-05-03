@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { Wifi, Signal, Battery, Globe, Users, ShieldCheck } from "lucide-react";
-import { useOnlineCount } from "@/lib/presence";
+import { Wifi, Signal, Battery, Globe } from "lucide-react";
 
 export function Taskbar({ onLaunchBrowser }: { onLaunchBrowser: () => void }) {
   const [time, setTime] = useState<Date | null>(null);
-  const online = useOnlineCount();
 
   useEffect(() => {
     setTime(new Date());
@@ -29,19 +27,6 @@ export function Taskbar({ onLaunchBrowser }: { onLaunchBrowser: () => void }) {
         >
           <Globe className="h-4 w-4" />
         </button>
-        <div className="h-6 w-px bg-white/10" />
-
-        {/* Online users + proxy health */}
-        <div className="flex items-center gap-2 px-2 text-[11px] text-foreground/70">
-          <span className="flex items-center gap-1" title={`${online} online now`}>
-            <Users className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="font-medium">{online}</span>
-          </span>
-          <span className="flex items-center gap-1 rounded-full bg-emerald-400/10 px-1.5 py-0.5 text-[10px] text-emerald-300 ring-1 ring-emerald-400/20" title="Proxy is online">
-            <ShieldCheck className="h-3 w-3" /> proxy ok
-          </span>
-        </div>
-
         <div className="h-6 w-px bg-white/10" />
         <div className="flex items-center gap-2 px-2 text-[11px] text-foreground/70">
           <Signal className="h-3.5 w-3.5" />
