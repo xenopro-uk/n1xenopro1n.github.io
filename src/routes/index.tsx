@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Globe, Gamepad2, Sparkles, Newspaper,
   Settings as SettingsIcon, Film, Music, Calculator as CalcIcon,
-  LogOut, Shield,
+  LogOut, Shield, School, type LucideIcon,
 } from "lucide-react";
 import { AppIcon } from "@/components/desktop/AppIcon";
 import { Window } from "@/components/desktop/Window";
@@ -23,7 +23,8 @@ import { BroadcastBanner } from "@/components/desktop/BroadcastBanner";
 import { HUD } from "@/components/desktop/HUD";
 import { WallpaperLayer } from "@/components/desktop/WallpaperLayer";
 import { DesktopContextMenu } from "@/components/desktop/DesktopContextMenu";
-import { SideRail } from "@/components/desktop/SideRail";
+import { District } from "@/components/desktop/District";
+import { FolderTile, FolderModal } from "@/components/desktop/FolderTile";
 import { useCloak } from "@/lib/cloak";
 import { isAuthed, clearAuthed } from "@/lib/auth-gate";
 import { useAccount } from "@/lib/account";
@@ -32,45 +33,54 @@ import { logActivity } from "@/lib/surveillance";
 import { usePresenceHeartbeat } from "@/lib/presence";
 import { useAdaptiveTheme } from "@/lib/adaptive-theme";
 import { useAppPositions } from "@/lib/app-positions";
+import { useFolders } from "@/lib/folders";
 
 export const Route = createFileRoute("/")({
   component: Desktop,
   head: () => ({
-    meta: [
-      { title: "XenoPro" },
-      { name: "description", content: "XenoPro desktop." },
-    ],
+    meta: [{ title: "XenoPro" }, { name: "description", content: "XenoPro desktop." }],
   }),
 });
 
-type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "admin";
-interface AppDef { id: AppId; label: string; icon: typeof Globe; adminOnly?: boolean }
+type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "admin" | "district";
+interface AppDef { id: AppId; label: string; icon: LucideIcon; adminOnly?: boolean }
 
 const APPS: AppDef[] = [
   { id: "browser",  label: "Xeno's Proxy",    icon: Globe },
   { id: "ai",       label: "Xeno's AI",       icon: Sparkles },
-  { id: "games",    label: "Xeno's Arcade",   icon: Gamepad2 },
+  { id: "games",    label: "Games",           icon: Gamepad2 },
   { id: "cinema",   label: "Xeno's Cinema",   icon: Film },
   { id: "music",    label: "Xeno's Sonic",    icon: Music },
   { id: "news",     label: "Xeno's Wire",     icon: Newspaper },
   { id: "calc",     label: "Xeno's Calc",     icon: CalcIcon },
+  { id: "district", label: "District",        icon: School },
   { id: "settings", label: "Xeno's Cloak",    icon: SettingsIcon },
   { id: "admin",    label: "Xeno's Dev",      icon: Shield, adminOnly: true },
 ];
 
-// iPhone-style default grid layout — to the right of the SideRail.
-const ICON_W = 88;
-const ICON_H = 96;
-const GRID_LEFT = 200; // SideRail is 176px (w-44) + small gap
-const GRID_TOP = 90;   // below the top-right utilities bar
+// Grid (iPhone-style snap)
+const CELL_W = 96;
+const CELL_H = 104;
+const GRID_LEFT = 32;
+const GRID_TOP = 80;
+const COLS = 8;
+
+function cellToXY(c: number, r: number) {
+  return { x: GRID_LEFT + c * CELL_W, y: GRID_TOP + r * CELL_H };
+}
+function xyToCell(x: number, y: number) {
+  const c = Math.max(0, Math.min(COLS - 1, Math.round((x - GRID_LEFT) / CELL_W)));
+  const r = Math.max(0, Math.round((y - GRID_TOP) / CELL_H));
+  return { c, r };
+}
+function cellKey(c: number, r: number) { return `${c},${r}`; }
 
 function defaultLayout(ids: string[]): Record<string, { x: number; y: number }> {
   const out: Record<string, { x: number; y: number }> = {};
-  const cols = 3;
   ids.forEach((id, i) => {
-    const c = i % cols;
-    const r = Math.floor(i / cols);
-    out[id] = { x: GRID_LEFT + c * ICON_W, y: GRID_TOP + r * ICON_H };
+    const c = i % COLS;
+    const r = Math.floor(i / COLS);
+    out[id] = cellToXY(c, r);
   });
   return out;
 }
@@ -84,10 +94,14 @@ function Desktop() {
   const [ready, setReady] = useState(false);
   const { user, isAdmin } = useAccount();
   const [banned, setBanned] = useState<string | null>(null);
+  const [openFolder, setOpenFolder] = useState<string | null>(null);
+  // dragPos = transient (during drag); committed via positions on drop
+  const [dragPos, setDragPos] = useState<Record<string, { x: number; y: number }>>({});
 
   usePresenceHeartbeat();
   useAdaptiveTheme();
   const { positions, setPosition } = useAppPositions();
+  const { folders, createFolder, renameFolder, moveFolder, addToFolder, removeFromFolder, deleteFolder } = useFolders();
 
   useEffect(() => {
     if (!isAuthed()) { navigate({ to: "/login" }); return; }
@@ -105,13 +119,88 @@ function Desktop() {
     () => APPS.filter((a) => !a.adminOnly || isAdmin),
     [isAdmin],
   );
+
+  // App ids that are inside a folder — they don't render on the desktop
+  const inFolderIds = useMemo(() =>
+    new Set(folders.flatMap((f) => f.appIds)),
+    [folders],
+  );
+
+  const desktopApps = useMemo(
+    () => visibleApps.filter((a) => !inFolderIds.has(a.id)),
+    [visibleApps, inFolderIds],
+  );
+
   const layout = useMemo(() => {
-    const def = defaultLayout(visibleApps.map((a) => a.id));
-    // Merge with persisted positions
+    const def = defaultLayout(desktopApps.map((a) => a.id));
     return Object.fromEntries(
-      visibleApps.map((a) => [a.id, positions[a.id] ?? def[a.id]]),
+      desktopApps.map((a) => [a.id, positions[a.id] ?? def[a.id]]),
     );
-  }, [visibleApps, positions]);
+  }, [desktopApps, positions]);
+
+  // Map every cell -> what's in it (app id or folder id)
+  const occupancy = useMemo(() => {
+    const m = new Map<string, { kind: "app" | "folder"; id: string }>();
+    for (const a of desktopApps) {
+      const p = layout[a.id];
+      const { c, r } = xyToCell(p.x, p.y);
+      m.set(cellKey(c, r), { kind: "app", id: a.id });
+    }
+    for (const f of folders) {
+      const { c, r } = xyToCell(f.x, f.y);
+      m.set(cellKey(c, r), { kind: "folder", id: f.id });
+    }
+    return m;
+  }, [desktopApps, folders, layout]);
+
+  const findEmptyCell = (preferC: number, preferR: number, exclude: string) => {
+    const occ = new Map(occupancy);
+    occ.delete(cellKey(preferC, preferR));
+    // Remove the moving piece so it doesn't block itself
+    for (const [k, v] of occ) if (v.id === exclude) occ.delete(k);
+    if (!occ.has(cellKey(preferC, preferR))) return { c: preferC, r: preferR };
+    // Spiral search
+    for (let radius = 1; radius < 12; radius++) {
+      for (let dr = -radius; dr <= radius; dr++) {
+        for (let dc = -radius; dc <= radius; dc++) {
+          const nc = preferC + dc, nr = preferR + dr;
+          if (nc < 0 || nc >= COLS || nr < 0) continue;
+          if (!occ.has(cellKey(nc, nr))) return { c: nc, r: nr };
+        }
+      }
+    }
+    return { c: preferC, r: preferR };
+  };
+
+  const handleAppDrop = (appId: string, x: number, y: number) => {
+    setDragPos((p) => { const n = { ...p }; delete n[appId]; return n; });
+    const { c, r } = xyToCell(x, y);
+    const target = occupancy.get(cellKey(c, r));
+    // Same cell → no-op
+    if (target?.kind === "app" && target.id === appId) return;
+    // Drop onto folder → add to folder
+    if (target?.kind === "folder") {
+      addToFolder(target.id, appId);
+      return;
+    }
+    // Drop onto another app → create folder containing both
+    if (target?.kind === "app" && target.id !== appId) {
+      const pos = cellToXY(c, r);
+      createFolder([target.id, appId], pos.x, pos.y);
+      return;
+    }
+    // Empty cell — snap (with collision search)
+    const slot = findEmptyCell(c, r, appId);
+    const snap = cellToXY(slot.c, slot.r);
+    setPosition(appId, snap);
+  };
+
+  const handleFolderDrop = (folderId: string, x: number, y: number) => {
+    const { c, r } = xyToCell(x, y);
+    const slot = findEmptyCell(c, r, folderId);
+    const snap = cellToXY(slot.c, slot.r);
+    moveFolder(folderId, snap.x, snap.y);
+  };
 
   const handleBgClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;
@@ -143,6 +232,12 @@ function Desktop() {
     );
   }
 
+  const resolveApp = (id: string) => {
+    const a = APPS.find((x) => x.id === id);
+    return a ? { label: a.label, icon: a.icon } : null;
+  };
+  const folder = folders.find((f) => f.id === openFolder);
+
   return (
     <div ref={bgRef} onClick={handleBgClick}
       className="relative h-screen w-screen overflow-hidden">
@@ -150,7 +245,6 @@ function Desktop() {
       <WallpaperLayer />
       <BroadcastBanner />
       <HUD />
-      <SideRail />
       <DesktopContextMenu
         onChangeWallpaper={() => { setSettingsTab("wallpaper"); setOpenApp("settings"); }}
         onOpenProxy={() => setOpenApp("browser")}
@@ -162,14 +256,6 @@ function Desktop() {
         <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-white/[0.03] blur-3xl" />
       </div>
 
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-[12vw] font-bold tracking-tighter text-white/[0.04] leading-none">
-            {brand.toLowerCase()}
-          </div>
-        </div>
-      </div>
-
       {/* Top-right utilities */}
       <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
         <AccountMenu />
@@ -179,19 +265,43 @@ function Desktop() {
         </button>
       </div>
 
-      {/* Draggable iPhone-style home grid */}
+      {/* Grid: snap-positioned apps + folders */}
       <div className="relative z-10 h-full w-full">
-        {visibleApps.map((app) => {
-          const pos = layout[app.id];
+        {desktopApps.map((app) => {
+          const pos = dragPos[app.id] ?? layout[app.id];
           return (
             <AppIcon key={app.id} icon={app.icon} label={app.label}
               accent="oklch(0.85 0 0)"
               x={pos.x} y={pos.y}
-              onMove={(x, y) => setPosition(app.id, { x, y })}
+              onMove={(x, y) => setDragPos((p) => ({ ...p, [app.id]: { x, y } }))}
+              onDrop={(x, y) => handleAppDrop(app.id, x, y)}
               onClick={() => { void logActivity("app.open", app.id, { label: app.label }); setOpenApp(app.id); }} />
           );
         })}
+        {folders.map((f) => (
+          <FolderTile key={f.id} id={f.id} name={f.name} x={f.x} y={f.y}
+            count={f.appIds.length}
+            onMove={(x, y) => moveFolder(f.id, x, y)}
+            onDrop={(x, y) => handleFolderDrop(f.id, x, y)}
+            onOpen={() => setOpenFolder(f.id)} />
+        ))}
       </div>
+
+      {openFolder && folder && (
+        <FolderModal
+          name={folder.name}
+          appIds={folder.appIds}
+          resolveApp={resolveApp}
+          onRename={(n) => renameFolder(folder.id, n)}
+          onOpenApp={(id) => { setOpenFolder(null); setOpenApp(id as AppId); }}
+          onRemoveApp={(id) => {
+            removeFromFolder(folder.id, id);
+            // If the folder is now empty, close & delete it
+            if (folder.appIds.length <= 1) { deleteFolder(folder.id); setOpenFolder(null); }
+          }}
+          onClose={() => setOpenFolder(null)}
+        />
+      )}
 
       {openApp && (
         <Window title={APPS.find((a) => a.id === openApp)?.label ?? ""}
@@ -203,6 +313,7 @@ function Desktop() {
           {openApp === "news" && <News />}
           {openApp === "music" && <MusicApp />}
           {openApp === "calc" && <Calculator />}
+          {openApp === "district" && <District />}
           {openApp === "settings" && <Settings initialTab={settingsTab} />}
           {openApp === "admin" && <AdminPanel />}
         </Window>
