@@ -124,6 +124,18 @@ export function Settings({ initialTab = "cloak" }: { initialTab?: Tab } = {}) {
                   <RotateCcw className="h-4 w-4" /> Reset
                 </button>
               </div>
+              <div className="mt-4 rounded-lg border border-dashed border-white/15 bg-white/[0.02] p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold">
+                  <EyeOff className="h-3.5 w-3.5" /> About:Blank Cloak
+                </div>
+                <p className="mb-2 text-[11px] text-foreground/60">
+                  Re-opens XenoPro inside an <code>about:blank</code> popup and redirects this tab to Google Classroom — the classic school-network bypass.
+                </p>
+                <button onClick={openAboutBlank}
+                  className="w-full rounded-md bg-white/10 px-3 py-2 text-xs ring-1 ring-white/15 hover:bg-white/15">
+                  Launch in about:blank
+                </button>
+              </div>
             </section>
           )}
 
