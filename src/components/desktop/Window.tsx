@@ -53,7 +53,6 @@ export function Window({ title, onClose, children, initial }: WindowProps) {
               aria-label="Close">
               <X className="m-auto h-2 w-2 text-destructive-foreground opacity-0 group-hover:opacity-100" strokeWidth={3} />
             </button>
-            <span className="h-3 w-3 rounded-full bg-yellow-500/70" />
             <button onClick={() => setFull((v) => !v)}
               className="group h-3 w-3 rounded-full bg-emerald-500/70 transition hover:bg-emerald-500"
               aria-label={full ? "Restore" : "Maximize"}>
@@ -66,11 +65,7 @@ export function Window({ title, onClose, children, initial }: WindowProps) {
             <Move className="h-3 w-3 text-foreground/30" />
             {title}
           </span>
-          <button onClick={() => setFull((v) => !v)}
-            className="rounded p-1 text-foreground/40 hover:bg-white/5 hover:text-foreground"
-            aria-label="Toggle fullscreen">
-            {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-          </button>
+          <span className="w-7" />
         </div>
         <div className="flex-1 overflow-hidden">{children}</div>
       </div>
