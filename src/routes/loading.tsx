@@ -1,14 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import mascot from "@/assets/xeno-mascot.jpeg";
 import { isAuthed } from "@/lib/auth-gate";
 import { useWallpaper } from "@/lib/wallpaper";
 
 export const Route = createFileRoute("/loading")({
   component: LoadingPage,
-  head: () => ({
-    meta: [{ title: "Loading XenoPro…" }],
-  }),
+  head: () => ({ meta: [{ title: "Loading XenoPro…" }] }),
 });
 
 const PHRASES = [
@@ -17,7 +14,7 @@ const PHRASES = [
   "Decrypting arcade vault…",
   "Indexing cinema catalog…",
   "Sharpening the dot cursor…",
-  "Ready.",
+  "Press ENTER to launch.",
 ];
 
 function LoadingPage() {
@@ -39,56 +36,74 @@ function LoadingPage() {
     return () => clearInterval(tick);
   }, [navigate]);
 
-  const enter = () => navigate({ to: "/" });
+  useEffect(() => {
+    if (!done) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter") { e.preventDefault(); navigate({ to: "/" }); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [done, navigate]);
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white">
-      {/* Wallpaper background (uses user's selected wallpaper if any) */}
-      {wallpaper && (
-        wallpaper.kind === "video" ? (
-          <video src={wallpaper.url} autoPlay muted playsInline loop={wallpaper.loop}
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-50" />
-        ) : (
-          <div className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-50"
-            style={{ backgroundImage: `url(${wallpaper.url})` }} />
-        )
-      )}
-      <div className="pointer-events-none absolute inset-0 bg-black/50" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black text-white">
+      {wallpaper && (wallpaper.kind === "video"
+        ? <video src={wallpaper.url} autoPlay muted playsInline loop={wallpaper.loop}
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40" />
+        : <div className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-40"
+            style={{ backgroundImage: `url(${wallpaper.url})` }} />)}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black via-black/70 to-black/95" />
 
-      <div className="pointer-events-none absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }} />
+      {/* Animated rings */}
+      <div className="pointer-events-none absolute inset-0 grid place-items-center">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i}
+            className="absolute rounded-full border border-white/10"
+            style={{
+              width: `${(i + 1) * 220}px`, height: `${(i + 1) * 220}px`,
+              animation: `xenoSpin ${20 + i * 8}s linear infinite ${i % 2 ? "" : "reverse"}`,
+            }} />
+        ))}
+      </div>
 
-      <div className="relative flex flex-col items-center gap-8 px-6 text-center">
-        <div className="relative">
-          <div className="absolute -inset-6 rounded-full bg-white/5 blur-2xl" />
-          <img src={mascot} alt="XenoPro"
-            className="relative h-56 w-auto rounded-2xl object-cover shadow-2xl ring-1 ring-white/10" />
-        </div>
+      <style>{`
+        @keyframes xenoSpin { to { transform: rotate(360deg); } }
+        @keyframes xenoPulse { 0%,100% { opacity: 1 } 50% { opacity: 0.4 } }
+      `}</style>
 
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight">XENOPRO</h1>
-          <p className="mt-1 text-xs uppercase tracking-[0.5em] text-white/40">unblocked · private · fast</p>
-        </div>
-
-        <div className="w-72">
-          <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
-            <div className="h-full bg-white transition-[width] duration-200" style={{ width: `${progress}%` }} />
+      <div className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-10 px-6 text-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="font-mono text-[11px] uppercase tracking-[0.6em] text-white/40">XENO//OS</div>
+          <h1 className="bg-gradient-to-b from-white via-white to-white/30 bg-clip-text text-7xl font-black tracking-tighter text-transparent sm:text-8xl">
+            XENOPRO
+          </h1>
+          <div className="font-mono text-[10px] uppercase tracking-[0.4em] text-white/30">
+            unblocked · private · fast
           </div>
-          <div className="mt-3 flex justify-between text-[10px] uppercase tracking-widest text-white/40">
+        </div>
+
+        <div className="w-full max-w-md font-mono">
+          <div className="flex justify-between text-[10px] uppercase tracking-widest text-white/50">
             <span>{phrase}</span>
-            <span>{Math.floor(progress)}%</span>
+            <span>{Math.floor(progress).toString().padStart(3, "0")}%</span>
+          </div>
+          <div className="mt-2 flex h-2 gap-[2px]">
+            {Array.from({ length: 40 }).map((_, i) => {
+              const filled = (i / 40) * 100 < progress;
+              return <div key={i} className={`flex-1 rounded-[1px] ${filled ? "bg-white" : "bg-white/10"}`} />;
+            })}
           </div>
         </div>
 
-        {done && (
-          <button onClick={enter}
-            className="mt-2 animate-pulse rounded-full bg-white px-8 py-3 text-sm font-semibold text-black shadow-2xl ring-2 ring-white/30 transition hover:scale-105 hover:ring-white/60">
-            Click to enter
-          </button>
+        {done ? (
+          <div className="flex flex-col items-center gap-3" style={{ animation: "xenoPulse 1.6s ease-in-out infinite" }}>
+            <kbd className="rounded-lg border border-white/30 bg-white/5 px-6 py-3 font-mono text-base tracking-widest shadow-[0_0_40px_-5px_rgba(255,255,255,0.4)]">
+              PRESS ENTER
+            </kbd>
+            <span className="text-[10px] uppercase tracking-widest text-white/40">to launch desktop</span>
+          </div>
+        ) : (
+          <div className="font-mono text-[10px] uppercase tracking-widest text-white/30">awaiting boot sequence…</div>
         )}
       </div>
     </div>
