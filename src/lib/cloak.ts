@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 
 export type ProxyProvider =
-  | "xeno"        // our own server-side proxy (best)
-  | "scramjet"    // Scramjet engine routed through our proxy
-  | "webcrawler"  // WebCrawler-style search-then-proxy
+  | "duckduckgo"
+  | "scramjet"
+  | "webcrawler"
   | "croxy"
   | "plainproxies"
   | "hideme"
@@ -14,7 +14,6 @@ export type ProxyProvider =
   | "novpn"
   | "googletranslate"
   | "googlecache"
-  | "duckduckgo"
   | "direct";
 
 export interface ProxyOption {
@@ -24,7 +23,7 @@ export interface ProxyOption {
 }
 
 export const PROXY_OPTIONS: ProxyOption[] = [
-  { id: "xeno",         label: "Xeno Proxy (recommended)", desc: "Our own server-side proxy. Strips X-Frame and CSP — works on most sites." },
+  { id: "duckduckgo",   label: "DuckDuckGo (default)",     desc: "Routes everything as a private DuckDuckGo search — clean, fast, never blocked." },
   { id: "scramjet",     label: "Scramjet Engine",          desc: "Service-worker style rewriting routed through our backend." },
   { id: "webcrawler",   label: "WebCrawler",               desc: "Search-and-fetch — finds the page first, then proxies it." },
   { id: "croxy",        label: "CroxyProxy",               desc: "Reliable general-purpose web proxy." },
@@ -36,7 +35,6 @@ export const PROXY_OPTIONS: ProxyOption[] = [
   { id: "novpn",        label: "NoVPN",                    desc: "Simple anonymous proxy." },
   { id: "googletranslate", label: "Google Translate",      desc: "The classic bypass — works where others don't." },
   { id: "googlecache",  label: "Google Cache",             desc: "Read cached snapshots of pages." },
-  { id: "duckduckgo",   label: "DuckDuckGo Search",        desc: "Route everything as a search query." },
   { id: "direct",       label: "Direct iframe",            desc: "Fastest, but most sites refuse to embed." },
 ];
 
@@ -51,7 +49,7 @@ const KEY = "xenopro:cloak";
 const DEFAULTS: CloakSettings = {
   tabTitle: "XenoPro",
   faviconUrl: "",
-  proxy: "xeno",
+  proxy: "duckduckgo",
 };
 
 export function loadCloak(): CloakSettings {
@@ -59,7 +57,10 @@ export function loadCloak(): CloakSettings {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULTS;
-    return { ...DEFAULTS, ...JSON.parse(raw) };
+    const parsed = { ...DEFAULTS, ...JSON.parse(raw) };
+    // Migrate old "xeno" provider to default
+    if (parsed.proxy === "xeno") parsed.proxy = "duckduckgo";
+    return parsed;
   } catch {
     return DEFAULTS;
   }
@@ -98,28 +99,39 @@ export function useCloak(): [CloakSettings, (s: CloakSettings) => void] {
   return [s, (next) => { setS(next); saveCloak(next); }];
 }
 
+/** Open the entire app inside an about:blank popup — the classic school-network bypass. */
+export function openAboutBlank() {
+  if (typeof window === "undefined") return;
+  const w = window.open("about:blank", "_blank");
+  if (!w) { alert("Popup blocked — allow popups for this site."); return; }
+  const url = window.location.href;
+  w.document.write(
+    `<!doctype html><html><head><title>${document.title}</title>` +
+    `<link rel="icon" href="${(document.querySelector("link[rel='icon']") as HTMLLinkElement | null)?.href ?? ""}">` +
+    `<style>html,body,iframe{margin:0;padding:0;border:0;width:100%;height:100%;overflow:hidden;background:#000}</style>` +
+    `</head><body><iframe src="${url}" allow="autoplay; fullscreen; clipboard-read; clipboard-write"></iframe></body></html>`
+  );
+  w.document.close();
+  // Try to redirect the original window so the address bar shows something innocuous.
+  try { window.location.replace("https://classroom.google.com/h"); } catch { /* noop */ }
+}
+
 // Build a proxy URL for the given provider.
-export function proxify(rawUrl: string, provider: ProxyProvider = "xeno"): string {
+export function proxify(rawUrl: string, provider: ProxyProvider = "duckduckgo"): string {
   let url = rawUrl.trim();
   if (!url) return "";
   const isUrl = /^https?:\/\//.test(url) || /\.[a-z]{2,}/i.test(url);
   if (!isUrl) {
-    // Search query — wrap as DuckDuckGo HTML search through our proxy if xeno
-    if (provider === "xeno") {
-      const search = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
-      return `/api/public/proxy?url=${encodeURIComponent(search)}`;
-    }
     return `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
   }
   if (!/^https?:\/\//.test(url)) url = `https://${url}`;
   const enc = encodeURIComponent(url);
   const host = url.replace(/^https?:\/\//, "");
   switch (provider) {
-    case "xeno":         return `/api/public/proxy?url=${enc}`;
     case "scramjet":     return `/api/public/proxy?engine=scramjet&url=${enc}`;
     case "webcrawler":   return `/api/public/proxy?engine=webcrawler&url=${enc}`;
     case "direct":       return url;
-    case "duckduckgo":   return `https://duckduckgo.com/?q=${enc}`;
+    case "duckduckgo":   return `/api/public/proxy?url=${enc}`;
     case "plainproxies": return `https://plainproxies.com/api/v2?url=${enc}`;
     case "hideme":       return `https://hide.me/en/proxy?u=${enc}`;
     case "proxysite":    return `https://eu1.proxysite.com/process.php?d=${enc}`;
@@ -138,5 +150,5 @@ export function proxify(rawUrl: string, provider: ProxyProvider = "xeno"): strin
 
 // Try a list of providers in order — caller can fall back if the iframe stays blank.
 export const PROVIDER_FALLBACK_ORDER: ProxyProvider[] = [
-  "xeno", "croxy", "plainproxies", "hideme", "blockaway", "proxysite", "googletranslate", "duckduckgo",
+  "duckduckgo", "croxy", "plainproxies", "hideme", "blockaway", "proxysite", "googletranslate",
 ];

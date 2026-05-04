@@ -3,14 +3,14 @@ import { ArrowLeft, ArrowRight, RotateCw, Search, Shield, Lock, Globe, Zap, Plus
 import { proxify, useCloak, PROXY_OPTIONS, PROVIDER_FALLBACK_ORDER, type ProxyProvider } from "@/lib/cloak";
 
 const QUICK_LINKS = [
-  { name: "Google", url: "https://www.google.com" },
-  { name: "YouTube", url: "https://www.youtube.com" },
-  { name: "Wikipedia", url: "https://en.wikipedia.org" },
-  { name: "Reddit", url: "https://www.reddit.com" },
-  { name: "Discord", url: "https://discord.com/app" },
-  { name: "GitHub", url: "https://github.com" },
-  { name: "X / Twitter", url: "https://x.com" },
-  { name: "TikTok", url: "https://www.tiktok.com" },
+  { name: "YouTube",  url: "https://www.youtube.com",         icon: "https://www.youtube.com/s/desktop/22617fde/img/logos/favicon_144x144.png" },
+  { name: "Discord",  url: "https://discord.com/app",         icon: "https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" },
+  { name: "GitHub",   url: "https://github.com",              icon: "https://github.githubassets.com/favicons/favicon-dark.png" },
+  { name: "TikTok",   url: "https://www.tiktok.com",          icon: "https://sf-tb-sg.ibytedtos.com/obj/eden-sg/uhtyvueh7nulogpoguhm/tiktok-icon2.png" },
+  { name: "GeForce NOW",     url: "https://play.geforcenow.com", icon: "https://play.geforcenow.com/favicon.ico" },
+  { name: "Xbox Cloud Gaming", url: "https://www.xbox.com/play", icon: "https://www.xbox.com/favicon.ico" },
+  { name: "Spotify",  url: "https://open.spotify.com",        icon: "https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png" },
+  { name: "Netflix",  url: "https://www.netflix.com",         icon: "https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2023.ico" },
 ];
 
 interface Tab {
