@@ -199,8 +199,9 @@ function StartPage({ onPick }: { onPick: (url: string) => void }) {
         {QUICK_LINKS.map((link) => (
           <button key={link.name} onClick={() => onPick(link.url)}
             className="group flex flex-col items-center gap-2 rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-white/10">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-xs font-bold">
-              {link.name[0]}
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white/10">
+              <img src={link.icon} alt="" className="h-7 w-7 object-contain"
+                onError={(e) => { const el = e.currentTarget as HTMLImageElement; el.style.display = "none"; }} />
             </div>
             <span className="text-[11px] text-foreground/80">{link.name}</span>
           </button>
