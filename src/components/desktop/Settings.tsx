@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { Settings as SettingsIcon, Save, RotateCcw, Image as ImageIcon, Upload, Trash2, Repeat } from "lucide-react";
-import { useCloak, type ProxyProvider, PROXY_OPTIONS } from "@/lib/cloak";
+import { Settings as SettingsIcon, Save, RotateCcw, Image as ImageIcon, Upload, Trash2, Repeat, EyeOff } from "lucide-react";
+import { useCloak, openAboutBlank, type ProxyProvider, PROXY_OPTIONS } from "@/lib/cloak";
 import { useWallpaper, uploadWallpaperFile, CURATED, type WallpaperKind } from "@/lib/wallpaper";
 import { toast } from "sonner";
 
@@ -30,7 +30,7 @@ export function Settings({ initialTab = "cloak" }: { initialTab?: Tab } = {}) {
 
   const apply = () => setCloak(draft);
   const reset = () => {
-    const fresh = { tabTitle: "XenoPro", faviconUrl: "", proxy: "croxy" as ProxyProvider };
+    const fresh = { tabTitle: "XenoPro", faviconUrl: "", proxy: "duckduckgo" as ProxyProvider };
     setDraft(fresh); setCloak(fresh);
   };
 
