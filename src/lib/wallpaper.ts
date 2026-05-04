@@ -21,9 +21,9 @@ export interface CuratedWallpaper {
   category: "anime" | "marvel" | "abstract" | "minecraft";
 }
 
-// Motionbgs 4K direct mp4 sources (live wallpaper feed).
-const mb = (id: string, slug: string) =>
-  `https://motionbgs.com/media/${id}/${slug}.3840x2160.mp4`;
+// Motionbgs direct mp4 sources (live wallpaper feed).
+const mb = (id: string, slug: string, res: "3840x2160" | "960x540" = "3840x2160") =>
+  `https://motionbgs.com/media/${id}/${slug}.${res}.mp4`;
 const mbThumb = (id: string, slug: string) =>
   `https://motionbgs.com/i/c/640x360/media/${id}/${slug}.jpg`;
 
@@ -32,7 +32,7 @@ export const CURATED: CuratedWallpaper[] = [
   { id: "miku-star-eyes", label: "Hatsune Miku Star Eyes", category: "anime", kind: "video",
     thumb: mbThumb("9465", "hatsune-miku-star-eyes"), url: mb("9465", "hatsune-miku-star-eyes") },
   { id: "miku-nakano", label: "Miku Nakano Manga", category: "anime", kind: "video",
-    thumb: mbThumb("4552", "miku-nakano-manga"), url: mb("4552", "miku-nakano-manga") },
+    thumb: mbThumb("4552", "miku-nakano-manga"), url: mb("4552", "miku-nakano-manga", "960x540") },
   { id: "girl-curtains", label: "Girl Behind Curtains", category: "anime", kind: "video",
     thumb: mbThumb("8925", "girl-behind-curtains-3"), url: mb("8925", "girl-behind-curtains-3") },
   { id: "gojo-vs-sukuna", label: "Gojo vs Sukuna", category: "anime", kind: "video",
@@ -48,7 +48,7 @@ export const CURATED: CuratedWallpaper[] = [
 
   // Abstract
   { id: "windows-glitch", label: "Windows Glitch Logo", category: "abstract", kind: "video",
-    thumb: mbThumb("1937", "windows-glitch-logo"), url: mb("1937", "windows-glitch-logo") },
+    thumb: mbThumb("1937", "windows-glitch-logo"), url: mb("1937", "windows-glitch-logo", "960x540") },
   { id: "gravity-abyss", label: "Gravity's Dark Abyss", category: "abstract", kind: "video",
     thumb: mbThumb("7010", "gravitys-dark-abyss"), url: mb("7010", "gravitys-dark-abyss") },
   { id: "celestial-veil", label: "Celestial Veil", category: "abstract", kind: "video",

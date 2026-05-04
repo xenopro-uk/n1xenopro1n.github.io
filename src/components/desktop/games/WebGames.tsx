@@ -45,11 +45,10 @@ export function WebGames() {
           <div className="ml-auto"><GameRating gameId={active.id} /></div>
         </div>
         <iframe
-          src={active.url}
+          src={`/api/public/proxy?url=${encodeURIComponent(active.url)}`}
           className="flex-1 bg-black"
-          allow="autoplay; fullscreen; gamepad; pointer-lock"
+          allow="autoplay; fullscreen; gamepad; pointer-lock; clipboard-read; clipboard-write"
           allowFullScreen
-          sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts allow-pointer-lock allow-downloads"
           referrerPolicy="no-referrer"
           title={active.name}
         />

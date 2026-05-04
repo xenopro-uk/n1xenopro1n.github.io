@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Globe, Gamepad2, Sparkles, Newspaper,
   Settings as SettingsIcon, Film, Music, Calculator as CalcIcon,
-  LogOut, Shield, School, type LucideIcon,
+  LogOut, Shield, type LucideIcon,
 } from "lucide-react";
 import { AppIcon } from "@/components/desktop/AppIcon";
 import { Window } from "@/components/desktop/Window";
@@ -23,7 +23,7 @@ import { BroadcastBanner } from "@/components/desktop/BroadcastBanner";
 import { HUD } from "@/components/desktop/HUD";
 import { WallpaperLayer } from "@/components/desktop/WallpaperLayer";
 import { DesktopContextMenu } from "@/components/desktop/DesktopContextMenu";
-import { District } from "@/components/desktop/District";
+import { AboutMe } from "@/components/desktop/AboutMe";
 import { FolderTile, FolderModal } from "@/components/desktop/FolderTile";
 import { useCloak } from "@/lib/cloak";
 import { isAuthed, clearAuthed } from "@/lib/auth-gate";
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "admin" | "district";
+type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "admin";
 interface AppDef { id: AppId; label: string; icon: LucideIcon; adminOnly?: boolean }
 
 const APPS: AppDef[] = [
@@ -53,7 +53,6 @@ const APPS: AppDef[] = [
   { id: "music",    label: "Xeno's Sonic",    icon: Music },
   { id: "news",     label: "Xeno's Wire",     icon: Newspaper },
   { id: "calc",     label: "Xeno's Calc",     icon: CalcIcon },
-  { id: "district", label: "District",        icon: School },
   { id: "settings", label: "Xeno's Cloak",    icon: SettingsIcon },
   { id: "admin",    label: "Xeno's Dev",      icon: Shield, adminOnly: true },
 ];
@@ -241,6 +240,7 @@ function Desktop() {
   return (
     <div ref={bgRef} onClick={handleBgClick}
       className="relative h-screen w-screen overflow-hidden">
+      <AboutMe />
       <DotCursor />
       <WallpaperLayer />
       <BroadcastBanner />
@@ -313,7 +313,6 @@ function Desktop() {
           {openApp === "news" && <News />}
           {openApp === "music" && <MusicApp />}
           {openApp === "calc" && <Calculator />}
-          {openApp === "district" && <District />}
           {openApp === "settings" && <Settings initialTab={settingsTab} />}
           {openApp === "admin" && <AdminPanel />}
         </Window>

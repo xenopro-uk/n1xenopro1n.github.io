@@ -149,96 +149,109 @@ export function Cinema() {
     );
   }
 
+  const featured = items[0];
+  const rest = items.slice(1);
+
   return (
-    <div className="flex h-full flex-col bg-background/40">
-      <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
-        <Film className="h-4 w-4" />
-        <span className="text-sm font-medium">Cinema</span>
+    <div className="flex h-full flex-col bg-black text-white">
+      {/* Netflix-style top bar */}
+      <div className="flex items-center gap-3 border-b border-white/5 bg-black/80 px-5 py-3 backdrop-blur">
+        <span className="text-lg font-black tracking-tight text-red-600">XENOFLIX</span>
         <div className="ml-2 flex gap-1">
-          <button
-            onClick={() => loadTrending("movie")}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${mode === "movie" ? "bg-white text-black" : "text-foreground/60 hover:bg-white/5"}`}
-          >
-            <Film className="h-3 w-3" /> Movies
+          <button onClick={() => loadTrending("movie")}
+            className={`rounded-md px-3 py-1 text-xs ${mode === "movie" ? "bg-white text-black" : "text-white/70 hover:bg-white/10"}`}>
+            Movies
           </button>
-          <button
-            onClick={() => loadTrending("tv")}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${mode === "tv" ? "bg-white text-black" : "text-foreground/60 hover:bg-white/5"}`}
-          >
-            <Tv className="h-3 w-3" /> TV
+          <button onClick={() => loadTrending("tv")}
+            className={`rounded-md px-3 py-1 text-xs ${mode === "tv" ? "bg-white text-black" : "text-white/70 hover:bg-white/10"}`}>
+            TV Shows
           </button>
         </div>
         <form onSubmit={search} className="ml-auto flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">
-          <Search className="h-3.5 w-3.5 text-foreground/40" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search title…"
-            className="w-44 bg-transparent text-xs outline-none"
-          />
+          <Search className="h-3.5 w-3.5 text-white/40" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Titles, people, genres"
+            className="w-44 bg-transparent text-xs outline-none" />
         </form>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
+
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
         {items.length === 0 && !loading && (
-          <div className="flex h-full flex-col gap-4">
-            {recent.length > 0 && (
-              <div>
-                <div className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-foreground/50">
-                  <History className="h-3 w-3" /> Recently watched
-                </div>
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-                  {recent.map((it) => (
-                    <button key={it.id} onClick={() => setActive(it)}
-                      className="group overflow-hidden rounded-xl bg-white/[0.04] text-left ring-1 ring-white/5 hover:ring-white/30">
-                      {it.poster_path ? (
-                        <img src={IMG + it.poster_path} alt="" className="aspect-[2/3] w-full object-cover" loading="lazy" />
-                      ) : (
-                        <div className="flex aspect-[2/3] items-center justify-center bg-white/5 text-foreground/30">
-                          <Film className="h-6 w-6" />
-                        </div>
-                      )}
-                      <div className="line-clamp-1 p-1.5 text-[10px]">{it.title || it.name}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center text-sm text-foreground/50">
-              <Film className="h-10 w-10 text-foreground/20" />
+          <div className="grid h-full place-items-center text-center text-sm text-white/50">
+            <div className="flex flex-col items-center gap-3">
+              <Film className="h-10 w-10 text-white/20" />
               <p>Search a title or load trending.</p>
-              <button onClick={() => loadTrending("movie")} className="mt-2 rounded-full bg-white px-4 py-1.5 text-xs text-black">
-                Load Trending Movies
+              <button onClick={() => loadTrending("movie")} className="rounded-full bg-red-600 px-5 py-2 text-xs font-semibold text-white hover:bg-red-500">
+                Load Trending
               </button>
             </div>
           </div>
         )}
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {items.map((it) => (
-            <button
-              key={it.id}
-              onClick={() => setActive(it)}
-              className="group overflow-hidden rounded-xl bg-white/[0.04] text-left ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:ring-white/30"
-            >
-              {it.poster_path ? (
-                <img src={IMG + it.poster_path} alt="" className="aspect-[2/3] w-full object-cover" loading="lazy" />
-              ) : (
-                <div className="flex aspect-[2/3] items-center justify-center bg-white/5 text-foreground/30">
-                  <Film className="h-8 w-8" />
-                </div>
-              )}
-              <div className="p-2">
-                <div className="flex items-center gap-1 text-[10px] text-foreground/70">
-                  <Play className="h-2.5 w-2.5 fill-current" /> Play free
-                </div>
-                <div className="line-clamp-1 text-xs font-medium">{it.title || it.name}</div>
-                <div className="text-[10px] text-foreground/50">
-                  {(it.release_date || it.first_air_date || "").slice(0, 4)}
-                </div>
+
+        {/* Hero */}
+        {featured && (
+          <div className="relative h-72 w-full overflow-hidden">
+            {featured.poster_path && (
+              <img src={IMG + featured.poster_path} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover blur-sm opacity-60" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
+            <div className="relative z-10 flex h-full max-w-2xl flex-col justify-end gap-3 p-8">
+              <h2 className="text-4xl font-black tracking-tight drop-shadow-lg">{featured.title || featured.name}</h2>
+              <p className="line-clamp-3 text-sm text-white/80">{featured.overview}</p>
+              <div className="flex gap-2">
+                <button onClick={() => setActive(featured)}
+                  className="flex items-center gap-2 rounded-md bg-white px-5 py-2 text-sm font-semibold text-black hover:bg-white/90">
+                  <Play className="h-4 w-4 fill-black" /> Play
+                </button>
+                <button className="rounded-md bg-white/20 px-5 py-2 text-sm font-semibold backdrop-blur hover:bg-white/30">
+                  More info
+                </button>
               </div>
-            </button>
-          ))}
+            </div>
+          </div>
+        )}
+
+        {/* Rails */}
+        <div className="space-y-8 px-6 py-6">
+          {recent.length > 0 && (
+            <Rail title="Continue Watching" icon={<History className="h-3.5 w-3.5" />}>
+              {recent.map((it) => <Poster key={it.id} item={it} onClick={() => setActive(it)} />)}
+            </Rail>
+          )}
+          {rest.length > 0 && (
+            <Rail title={`Trending ${mode === "movie" ? "Movies" : "TV"} this week`}>
+              {rest.map((it) => <Poster key={it.id} item={it} onClick={() => setActive(it)} />)}
+            </Rail>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function Rail({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-white/90">
+        {icon} {title}
+      </div>
+      <div className="-mx-1 flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Poster({ item, onClick }: { item: TmdbItem; onClick: () => void }) {
+  return (
+    <button onClick={onClick}
+      className="group w-32 shrink-0 overflow-hidden rounded-md bg-white/5 text-left ring-1 ring-white/5 transition hover:scale-105 hover:ring-white/30">
+      {item.poster_path ? (
+        <img src={IMG + item.poster_path} alt="" className="aspect-[2/3] w-full object-cover" loading="lazy" />
+      ) : (
+        <div className="grid aspect-[2/3] place-items-center bg-white/5 text-white/30"><Film className="h-6 w-6" /></div>
+      )}
+      <div className="line-clamp-1 p-1.5 text-[10px]">{item.title || item.name}</div>
+    </button>
   );
 }
