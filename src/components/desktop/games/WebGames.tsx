@@ -2,7 +2,7 @@
 // Each game is rendered inside an iframe routed through the existing
 // /api/public/proxy so the source URL is hidden from inspect.
 import { useEffect, useState } from "react";
-import { ArrowLeft, Search, Loader2 } from "lucide-react";
+import { ArrowLeft, Search, Loader2, RotateCw, ExternalLink } from "lucide-react";
 import { logActivity } from "@/lib/surveillance";
 import { GameRating } from "./GameRating";
 
@@ -18,6 +18,7 @@ export function WebGames() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [active, setActive] = useState<WebGame | null>(null);
+  const [useProxy, setUseProxy] = useState(true);
 
   useEffect(() => {
     let alive = true;
@@ -34,6 +35,7 @@ export function WebGames() {
   const filtered = items.filter((g) => g.name.toLowerCase().includes(q.toLowerCase()));
 
   if (active) {
+    const src = useProxy ? `/api/public/proxy?url=${encodeURIComponent(active.url)}` : active.url;
     return (
       <div className="flex h-full flex-col bg-background/40">
         <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
@@ -42,10 +44,19 @@ export function WebGames() {
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
           <span className="text-sm font-medium">{active.name}</span>
-          <div className="ml-auto"><GameRating gameId={active.id} /></div>
+          <button onClick={() => setUseProxy((v) => !v)}
+            className="ml-auto flex items-center gap-1 rounded-md bg-white/5 px-2 py-1 text-[11px] text-foreground/70 ring-1 ring-white/10 hover:bg-white/10">
+            <RotateCw className="h-3 w-3" /> {useProxy ? "Proxy" : "Direct"}
+          </button>
+          <a href={src} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 rounded-md bg-white/5 px-2 py-1 text-[11px] text-foreground/70 ring-1 ring-white/10 hover:bg-white/10">
+            <ExternalLink className="h-3 w-3" /> Open
+          </a>
+          <div><GameRating gameId={active.id} /></div>
         </div>
         <iframe
-          src={`/api/public/proxy?url=${encodeURIComponent(active.url)}`}
+          key={`${active.id}-${useProxy ? "proxy" : "direct"}`}
+          src={src}
           className="flex-1 bg-black"
           allow="autoplay; fullscreen; gamepad; pointer-lock; clipboard-read; clipboard-write"
           allowFullScreen
@@ -81,9 +92,9 @@ export function WebGames() {
               className="group flex flex-col overflow-hidden rounded-xl bg-white/[0.04] text-left ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:bg-white/10 hover:ring-white/20">
               <div className="flex aspect-video w-full items-center justify-center"
                 style={{ background: cardGradient(g.id) }}>
-                <span className="text-3xl font-black tracking-tighter text-white/85">
+                {g.thumb ? <img src={g.thumb} alt="" className="h-full w-full object-cover opacity-90" loading="lazy" /> : <span className="text-3xl font-black tracking-tighter text-white/85">
                   {g.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase()}
-                </span>
+                </span>}
               </div>
               <div className="flex flex-1 flex-col gap-0.5 p-2">
                 <span className="line-clamp-1 text-xs font-medium">{g.name}</span>
