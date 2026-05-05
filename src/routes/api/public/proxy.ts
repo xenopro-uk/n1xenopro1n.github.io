@@ -18,11 +18,13 @@ function absolutize(base: string, ref: string): string {
 }
 
 function rewriteHtml(html: string, baseUrl: string, proxyBase: string): string {
-  const wrap = (u: string) => `${proxyBase}?url=${encodeURIComponent(absolutize(baseUrl, u))}`;
+  const baseMatch = html.match(/<base[^>]+href=["']([^"']+)["'][^>]*>/i);
+  const assetBase = baseMatch ? absolutize(baseUrl, baseMatch[1]) : baseUrl;
+  const wrap = (u: string) => `${proxyBase}?url=${encodeURIComponent(absolutize(assetBase, u))}`;
 
   // Inject <base> for relative URLs and a small script to rewrite navigations
   const inject = `
-<base href="${baseUrl}">
+<base href="${assetBase}">
 <script>
 (function(){
   var P = ${JSON.stringify(proxyBase)};
@@ -54,10 +56,21 @@ function rewriteHtml(html: string, baseUrl: string, proxyBase: string): string {
   let out = html
     // strip CSP meta tags
     .replace(/<meta[^>]+http-equiv=["']?Content-Security-Policy["']?[^>]*>/gi, "")
+    // remove upstream base tags, then inject a corrected one before scripts run
+    .replace(/<base[^>]*>/gi, "")
     // src/href rewriting
-    .replace(/(\s(?:href|src|action))=["']([^"']+)["']/gi, (_m, attr, val) => {
+    .replace(/(\s(?:href|src|action|poster))=["']([^"']+)["']/gi, (_m, attr, val) => {
       if (val.startsWith("data:") || val.startsWith("javascript:") || val.startsWith("#") || val.startsWith("mailto:")) return `${attr}="${val}"`;
       return `${attr}="${wrap(val)}"`;
+    })
+    .replace(/(\ssrcset)=["']([^"']+)["']/gi, (_m, attr, val) => {
+      const rewritten = val.split(",").map((part: string) => {
+        const bits = part.trim().split(/\s+/);
+        const u = bits.shift() ?? "";
+        if (!u || u.startsWith("data:")) return part.trim();
+        return [wrap(u), ...bits].join(" ");
+      }).join(", ");
+      return `${attr}="${rewritten}"`;
     });
 
   // Inject base + script after <head>

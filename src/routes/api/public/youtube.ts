@@ -1,5 +1,5 @@
-// Keyless YouTube scraper — parses public search/trending HTML and returns
-// { videoId, title, channel, thumb }[]. No API key required.
+// YouTube Data API proxy — keeps the API key server-side and returns
+// { videoId, title, channel, thumb }[].
 // GET /api/public/youtube?action=search&q=foo
 // GET /api/public/youtube?action=trending
 import { createFileRoute } from "@tanstack/react-router";
@@ -49,22 +49,21 @@ function walk(node: unknown, out: Item[], seen: Set<string>) {
   }
 }
 
-async function scrape(url: string): Promise<Item[]> {
-  const r = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-      "Accept-Language": "en-US,en;q=0.9",
-    },
-  });
+async function searchApi(action: string, q: string): Promise<Item[]> {
+  const key = process.env.YOUTUBE_API_KEY;
+  if (!key) throw new Error("YouTube key missing");
+  const query = action === "trending" ? "today top music official audio" : q;
+  const r = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=30&q=${encodeURIComponent(query)}&key=${key}`,
+  );
   if (!r.ok) throw new Error(`yt ${r.status}`);
-  const html = await r.text();
-  const m = html.match(/var ytInitialData = (\{.+?\});<\/script>/s);
-  if (!m) return [];
-  let data: unknown;
-  try { data = JSON.parse(m[1]); } catch { return []; }
-  const items: Item[] = [];
-  walk(data, items, new Set());
-  return items.slice(0, 30);
+  const j = await r.json() as { items?: { id?: { videoId?: string }; snippet?: { title?: string; channelTitle?: string; thumbnails?: Record<string, { url: string }> } }[] };
+  return (j.items ?? []).flatMap((it) => {
+    const videoId = it.id?.videoId;
+    const s = it.snippet;
+    if (!videoId || !s?.title) return [];
+    return [{ videoId, title: s.title, channel: s.channelTitle ?? "YouTube", thumb: s.thumbnails?.high?.url ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }];
+  });
 }
 
 export const Route = createFileRoute("/api/public/youtube")({
@@ -76,10 +75,7 @@ export const Route = createFileRoute("/api/public/youtube")({
         const action = u.searchParams.get("action") ?? "search";
         const q = u.searchParams.get("q") ?? "music";
         try {
-          const url = action === "trending"
-            ? "https://www.youtube.com/feed/trending?bp=4gIcGhpGRXdoYXRfdG9fd2F0Y2hfbXVzaWNfdGFi" // Music tab
-            : `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}&sp=EgIQAQ%253D%253D`; // videos only
-          const items = await scrape(url);
+          const items = await searchApi(action, q);
           return json({ items });
         } catch (e) {
           return json({ error: (e as Error).message, items: [] }, 502);

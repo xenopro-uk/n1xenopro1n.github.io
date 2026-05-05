@@ -18,7 +18,27 @@ interface Tree { tree: { path: string; type: string }[]; }
 
 const RAW_BASE = "https://gn-math.github.io/html";
 
+const FEATURED_NAMES: Record<string, string> = {
+  "0.html": "Bowmasters",
+  "1-fde.html": "OvO",
+  "10.html": "Temple Run 2",
+  "102.html": "Paper.io 2",
+  "108.html": "Tiny Fishing",
+  "112-fix.html": "Wordle",
+  "114.html": "2048",
+  "124.html": "Moto X3M Pool Party",
+  "129.html": "Flappy Bird Multiplayer",
+  "146.html": "8 Ball Billiards Classic",
+  "151.html": "Chess Classic",
+  "158.html": "Pac-Man",
+  "171.html": "Candy Crush",
+  "177.html": "Run 3",
+  "181.html": "Minecraft 1.8.8",
+  "182.html": "Minecraft 1.12.2",
+};
+
 function nameOf(file: string): string {
+  if (FEATURED_NAMES[file]) return FEATURED_NAMES[file];
   const stem = file.replace(/\.html?$/i, "");
   return stem.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -39,11 +59,13 @@ export const Route = createFileRoute("/api/public/gn-math")({
             .filter((n) => !["index.html", "404.html"].includes(n.path.toLowerCase()))
             .map((n) => n.path)
             .sort();
-          const items = files.map((f) => ({
+          const preferred = Object.keys(FEATURED_NAMES).filter((f) => files.includes(f));
+          const ordered = [...preferred, ...files.filter((f) => !FEATURED_NAMES[f])].slice(0, 180);
+          const items = ordered.map((f) => ({
             id: `gn-${f}`,
             name: nameOf(f),
             url: `${RAW_BASE}/${f}`,
-            thumb: "",
+            thumb: `https://placehold.co/640x360/111111/ffffff?text=${encodeURIComponent(nameOf(f))}`,
           }));
           return json({ items });
         } catch (e) {

@@ -152,6 +152,97 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          room_id: string
+          sender_id: string
+          sender_name: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          room_id: string
+          sender_id: string
+          sender_name?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          room_id?: string
+          sender_id?: string
+          sender_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_room_members: {
+        Row: {
+          joined_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_room_members_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          invite_code: string | null
+          kind: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invite_code?: string | null
+          kind?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invite_code?: string | null
+          kind?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       game_ratings: {
         Row: {
           created_at: string
