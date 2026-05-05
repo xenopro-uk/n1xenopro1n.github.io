@@ -437,48 +437,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_private_chat_room: {
-        Args: { _name?: string }
-        Returns: {
-          created_at: string
-          created_by: string | null
-          id: string
-          invite_code: string | null
-          kind: string
-          name: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "chat_rooms"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
-      }
-      join_private_chat_room: {
-        Args: { _invite_code: string }
-        Returns: {
-          created_at: string
-          created_by: string | null
-          id: string
-          invite_code: string | null
-          kind: string
-          name: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "chat_rooms"
-          isOneToOne: true
-          isSetofReturn: false
-        }
       }
     }
     Enums: {
