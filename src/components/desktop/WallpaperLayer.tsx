@@ -1,9 +1,9 @@
 // Renders the active wallpaper as a fixed background behind the desktop.
 import { useEffect } from "react";
-import { CURATED, useWallpaper } from "@/lib/wallpaper";
+import { useWallpaper } from "@/lib/wallpaper";
 
 export function WallpaperLayer() {
-  const { wallpaper, setWallpaper } = useWallpaper();
+  const { wallpaper } = useWallpaper();
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -15,17 +15,6 @@ export function WallpaperLayer() {
       document.body.style.backgroundColor = "";
     }
   }, [wallpaper]);
-
-  useEffect(() => {
-    if (CURATED.length === 0) return;
-    let index = Math.max(0, CURATED.findIndex((w) => w.url === wallpaper?.url));
-    const id = window.setInterval(() => {
-      index = (index + 1) % CURATED.length;
-      const next = CURATED[index];
-      void setWallpaper({ url: next.url, kind: next.kind, loop: true });
-    }, 90_000);
-    return () => window.clearInterval(id);
-  }, [setWallpaper, wallpaper?.url]);
 
   if (!wallpaper) return null;
 
