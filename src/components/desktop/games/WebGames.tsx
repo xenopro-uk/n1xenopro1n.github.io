@@ -1,7 +1,7 @@
 // Web games loaded from the gn-math/html repo (owner-permitted import).
 // Each game is rendered inside an iframe routed through the existing
 // /api/public/proxy so the source URL is hidden from inspect.
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ArrowLeft, Search, Loader2, RotateCw, ExternalLink } from "lucide-react";
 import { logActivity } from "@/lib/surveillance";
 import { GameRating } from "./GameRating";
