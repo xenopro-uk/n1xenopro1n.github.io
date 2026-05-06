@@ -17,6 +17,35 @@ function absolutize(base: string, ref: string): string {
   }
 }
 
+// Block SSRF: reject non-http(s) schemes and private/loopback/link-local hosts.
+function isBlockedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  if (h === "localhost" || h.endsWith(".localhost") || h.endsWith(".internal")) return true;
+  // IPv6 loopback / link-local / unique-local
+  if (h === "::1" || h.startsWith("fe80:") || h.startsWith("fc") || h.startsWith("fd")) return true;
+  // IPv4 literal
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (m) {
+    const [a, b] = [parseInt(m[1], 10), parseInt(m[2], 10)];
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a === 169 && b === 254) return true; // link-local / cloud metadata
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a >= 224) return true; // multicast / reserved
+  }
+  return false;
+}
+
+function validateTarget(raw: string): { ok: true; url: URL } | { ok: false; reason: string } {
+  let u: URL;
+  try { u = new URL(raw); } catch { return { ok: false, reason: "Invalid URL" }; }
+  if (u.protocol !== "http:" && u.protocol !== "https:") return { ok: false, reason: "Only http(s) allowed" };
+  if (isBlockedHost(u.hostname)) return { ok: false, reason: "Host not allowed" };
+  return { ok: true, url: u };
+}
+
 function rewriteHtml(html: string, baseUrl: string, proxyBase: string): string {
   const baseMatch = html.match(/<base[^>]+href=["']([^"']+)["'][^>]*>/i);
   const assetBase = baseMatch ? absolutize(baseUrl, baseMatch[1]) : baseUrl;
@@ -106,11 +135,16 @@ export const Route = createFileRoute("/api/public/proxy")({
         if (!target) {
           return new Response("Missing ?url=", { status: 400, headers: CORS });
         }
+        const v = validateTarget(target);
+        if (!v.ok) {
+          return new Response(`Blocked: ${v.reason}`, { status: 400, headers: CORS });
+        }
 
         let upstream: Response;
         try {
-          upstream = await fetch(target, {
+          upstream = await fetch(v.url.toString(), {
             redirect: "follow",
+            signal: AbortSignal.timeout(15000),
             headers: {
               "User-Agent":
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121 Safari/537.36",
