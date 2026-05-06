@@ -44,7 +44,7 @@ export function clearAuthed() {
 /** Validate creds. Returns "dev" | "student" | null. */
 export function checkCreds(email: string, password: string): "dev" | "student" | null {
   const e = email.trim().toLowerCase();
-  if (e === DEV_EMAIL && password === DEV_PASSWORD) return "dev";
+  // Dev creds removed from client bundle — admins sign in via Supabase auth.
   if (e === STUDENT_EMAIL.toLowerCase() && password === STUDENT_PASSWORD) return "student";
   return null;
 }
