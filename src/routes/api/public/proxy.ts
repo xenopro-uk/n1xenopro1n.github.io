@@ -135,11 +135,16 @@ export const Route = createFileRoute("/api/public/proxy")({
         if (!target) {
           return new Response("Missing ?url=", { status: 400, headers: CORS });
         }
+        const v = validateTarget(target);
+        if (!v.ok) {
+          return new Response(`Blocked: ${v.reason}`, { status: 400, headers: CORS });
+        }
 
         let upstream: Response;
         try {
-          upstream = await fetch(target, {
+          upstream = await fetch(v.url.toString(), {
             redirect: "follow",
+            signal: AbortSignal.timeout(15000),
             headers: {
               "User-Agent":
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121 Safari/537.36",
