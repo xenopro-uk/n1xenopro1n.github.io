@@ -102,6 +102,15 @@ export function WebGames() {
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> Fetching game library…
           </div>
         )}
+        {error && !loading && (
+          <div className="mx-auto my-12 max-w-sm rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-center text-xs text-red-300">
+            <div className="mb-2">Couldn't load games: {error}</div>
+            <button onClick={() => void fetchGames()}
+              className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-1 text-[11px] font-medium text-black hover:bg-white/90">
+              <RotateCw className="h-3 w-3" /> Retry
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.map((g) => (
             <button key={g.id}
