@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Film, Search, Tv, Play, ExternalLink, AlertTriangle, History } from "lucide-react";
+import { Film, Search, Play, ExternalLink, AlertTriangle, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccount } from "@/lib/account";
 
@@ -15,12 +15,12 @@ interface TmdbItem {
   first_air_date?: string;
   poster_path?: string;
   overview: string;
+  media_type?: Mode;
 }
 
 const TMDB_KEY = "8265bd1679663a7ea12ac168da84d2e8";
 const IMG = "https://image.tmdb.org/t/p/w300";
 
-// Free streaming sources. We render with our server proxy so X-Frame headers are stripped.
 const SOURCES = [
   { id: "vidsrc.to",  movie: (id: number) => `https://vidsrc.to/embed/movie/${id}`,  tv: (id: number) => `https://vidsrc.to/embed/tv/${id}` },
   { id: "vidsrc.xyz", movie: (id: number) => `https://vidsrc.xyz/embed/movie/${id}`, tv: (id: number) => `https://vidsrc.xyz/embed/tv/${id}` },
@@ -32,16 +32,33 @@ const SOURCES = [
 
 export function Cinema() {
   const { user } = useAccount();
-  const [mode, setMode] = useState<Mode>("movie");
   const [q, setQ] = useState("");
   const [items, setItems] = useState<TmdbItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<TmdbItem | null>(null);
   const [sourceIdx, setSourceIdx] = useState(0);
   const [warned, setWarned] = useState(() =>
     typeof window !== "undefined" && localStorage.getItem(WARN_KEY) === "ok");
   const [recent, setRecent] = useState<TmdbItem[]>([]);
 
+  // Load combined trending (movies + tv) on mount
+  useEffect(() => {
+    if (!warned) return;
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const r = await fetch(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_KEY}`);
+        const j = await r.json();
+        const list: TmdbItem[] = (j.results ?? []).filter((x: TmdbItem) =>
+          x.media_type === "movie" || x.media_type === "tv");
+        if (alive) setItems(list);
+      } finally { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [warned]);
+
+  // Continue Watching
   useEffect(() => {
     if (!user) return;
     supabase.from("recently_watched").select("*").eq("user_id", user.id)
@@ -49,23 +66,29 @@ export function Cinema() {
       .then(({ data }) => {
         if (!data) return;
         setRecent(data.map((r) => ({
-          id: Number(r.media_id), title: r.title, name: r.title,
-          poster_path: r.poster?.replace(IMG, "") ?? "", overview: "",
+          id: Number(r.media_id),
+          title: r.title,
+          name: r.title,
+          poster_path: r.poster?.replace(IMG, "") ?? "",
+          overview: "",
+          media_type: (r.media_type as Mode) || "movie",
         })));
       });
   }, [user]);
 
+  // Save to recently_watched whenever we open one
   useEffect(() => {
     if (!active || !user) return;
+    const mt: Mode = active.media_type ?? "movie";
     supabase.from("recently_watched").upsert({
       user_id: user.id,
-      media_type: mode,
+      media_type: mt,
       media_id: String(active.id),
       title: active.title || active.name || "",
       poster: active.poster_path ? IMG + active.poster_path : null,
       watched_at: new Date().toISOString(),
     }, { onConflict: "user_id,media_type,media_id" }).then(() => {});
-  }, [active, mode, user]);
+  }, [active, user]);
 
   if (!warned) {
     return (
@@ -91,28 +114,23 @@ export function Cinema() {
     if (!q.trim()) return;
     setLoading(true);
     try {
-      const r = await fetch(`https://api.themoviedb.org/3/search/${mode}?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`);
+      const r = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`);
       const j = await r.json();
-      setItems(j.results ?? []);
-    } finally { setLoading(false); }
-  };
-
-  const loadTrending = async (m: Mode) => {
-    setMode(m); setLoading(true);
-    try {
-      const r = await fetch(`https://api.themoviedb.org/3/trending/${m}/week?api_key=${TMDB_KEY}`);
-      const j = await r.json();
-      setItems(j.results ?? []);
+      const list: TmdbItem[] = (j.results ?? []).filter((x: TmdbItem) =>
+        x.media_type === "movie" || x.media_type === "tv");
+      setItems(list);
     } finally { setLoading(false); }
   };
 
   const rawEmbed = (it: TmdbItem) => {
     const src = SOURCES[sourceIdx];
-    return mode === "movie" ? src.movie(it.id) : src.tv(it.id);
+    const mt: Mode = it.media_type ?? "movie";
+    return mt === "movie" ? src.movie(it.id) : src.tv(it.id);
   };
 
   if (active) {
     const direct = rawEmbed(active);
+    const mt: Mode = active.media_type ?? "movie";
     return (
       <div className="flex h-full flex-col">
         <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-background/60 px-3 py-2">
@@ -120,6 +138,7 @@ export function Cinema() {
             ← Back
           </button>
           <span className="line-clamp-1 text-sm font-medium">{active.title || active.name}</span>
+          <span className="rounded bg-white/10 px-1.5 text-[10px] uppercase text-white/60">{mt}</span>
           <a href={direct} target="_blank" rel="noopener noreferrer"
             className="ml-auto flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-medium text-black hover:bg-white/90">
             <ExternalLink className="h-3 w-3" /> Open in new tab
@@ -134,7 +153,7 @@ export function Cinema() {
             ))}
           </div>
         </div>
-        <iframe key={`${active.id}-${sourceIdx}`}
+        <iframe key={`${active.id}-${mt}-${sourceIdx}`}
           src={direct}
           className="flex-1 w-full bg-black"
           allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
@@ -154,19 +173,9 @@ export function Cinema() {
 
   return (
     <div className="flex h-full flex-col bg-black text-white">
-      {/* Netflix-style top bar */}
       <div className="flex items-center gap-3 border-b border-white/5 bg-black/80 px-5 py-3 backdrop-blur">
         <span className="text-lg font-black tracking-tight text-red-600">XENOFLIX</span>
-        <div className="ml-2 flex gap-1">
-          <button onClick={() => loadTrending("movie")}
-            className={`rounded-md px-3 py-1 text-xs ${mode === "movie" ? "bg-white text-black" : "text-white/70 hover:bg-white/10"}`}>
-            Movies
-          </button>
-          <button onClick={() => loadTrending("tv")}
-            className={`rounded-md px-3 py-1 text-xs ${mode === "tv" ? "bg-white text-black" : "text-white/70 hover:bg-white/10"}`}>
-            TV Shows
-          </button>
-        </div>
+        <span className="text-[10px] uppercase tracking-wider text-white/40">Movies + Shows</span>
         <form onSubmit={search} className="ml-auto flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">
           <Search className="h-3.5 w-3.5 text-white/40" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Titles, people, genres"
@@ -175,19 +184,10 @@ export function Cinema() {
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {items.length === 0 && !loading && (
-          <div className="grid h-full place-items-center text-center text-sm text-white/50">
-            <div className="flex flex-col items-center gap-3">
-              <Film className="h-10 w-10 text-white/20" />
-              <p>Search a title or load trending.</p>
-              <button onClick={() => loadTrending("movie")} className="rounded-full bg-red-600 px-5 py-2 text-xs font-semibold text-white hover:bg-red-500">
-                Load Trending
-              </button>
-            </div>
-          </div>
+        {loading && items.length === 0 && (
+          <div className="grid h-full place-items-center text-xs text-white/40">Loading trending…</div>
         )}
 
-        {/* Hero */}
         {featured && (
           <div className="relative h-72 w-full overflow-hidden">
             {featured.poster_path && (
@@ -203,24 +203,20 @@ export function Cinema() {
                   className="flex items-center gap-2 rounded-md bg-white px-5 py-2 text-sm font-semibold text-black hover:bg-white/90">
                   <Play className="h-4 w-4 fill-black" /> Play
                 </button>
-                <button className="rounded-md bg-white/20 px-5 py-2 text-sm font-semibold backdrop-blur hover:bg-white/30">
-                  More info
-                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Rails */}
         <div className="space-y-8 px-6 py-6">
           {recent.length > 0 && (
             <Rail title="Continue Watching" icon={<History className="h-3.5 w-3.5" />}>
-              {recent.map((it) => <Poster key={it.id} item={it} onClick={() => setActive(it)} />)}
+              {recent.map((it) => <Poster key={`r-${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
             </Rail>
           )}
           {rest.length > 0 && (
-            <Rail title={`Trending ${mode === "movie" ? "Movies" : "TV"} this week`}>
-              {rest.map((it) => <Poster key={it.id} item={it} onClick={() => setActive(it)} />)}
+            <Rail title="Trending this week">
+              {rest.map((it) => <Poster key={`${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
             </Rail>
           )}
         </div>

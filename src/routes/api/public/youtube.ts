@@ -52,9 +52,24 @@ function walk(node: unknown, out: Item[], seen: Set<string>) {
 async function searchApi(action: string, q: string): Promise<Item[]> {
   const key = process.env.YOUTUBE_API_KEY;
   if (!key) throw new Error("YouTube key missing");
-  const query = action === "trending" ? "today top music official audio" : q;
+
+  if (action === "trending") {
+    // Real "trending today" via videos.chart=mostPopular in the Music category (10).
+    const r = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&videoCategoryId=10&regionCode=US&maxResults=40&key=${key}`,
+    );
+    if (!r.ok) throw new Error(`yt ${r.status}`);
+    const j = await r.json() as { items?: { id?: string; snippet?: { title?: string; channelTitle?: string; thumbnails?: Record<string, { url: string }> } }[] };
+    return (j.items ?? []).flatMap((it) => {
+      const videoId = it.id;
+      const s = it.snippet;
+      if (!videoId || !s?.title) return [];
+      return [{ videoId, title: s.title, channel: s.channelTitle ?? "YouTube", thumb: s.thumbnails?.high?.url ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }];
+    });
+  }
+
   const r = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=30&q=${encodeURIComponent(query)}&key=${key}`,
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=30&q=${encodeURIComponent(q)}&key=${key}`,
   );
   if (!r.ok) throw new Error(`yt ${r.status}`);
   const j = await r.json() as { items?: { id?: { videoId?: string }; snippet?: { title?: string; channelTitle?: string; thumbnails?: Record<string, { url: string }> } }[] };

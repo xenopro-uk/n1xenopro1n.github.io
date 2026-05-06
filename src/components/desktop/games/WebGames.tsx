@@ -1,7 +1,7 @@
 // Web games loaded from the gn-math/html repo (owner-permitted import).
 // Each game is rendered inside an iframe routed through the existing
 // /api/public/proxy so the source URL is hidden from inspect.
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ArrowLeft, Search, Loader2, RotateCw, ExternalLink } from "lucide-react";
 import { logActivity } from "@/lib/surveillance";
 import { GameRating } from "./GameRating";
@@ -20,17 +20,34 @@ export function WebGames() {
   const [active, setActive] = useState<WebGame | null>(null);
   const [useProxy, setUseProxy] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const r = await fetch("/api/public/gn-math");
-        const j = await r.json() as { items?: WebGame[] };
-        if (alive) setItems(j.items ?? []);
-      } finally { if (alive) setLoading(false); }
-    })();
-    return () => { alive = false; };
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchGames = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      let lastErr: string | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const r = await fetch("/api/public/gn-math", { cache: "no-store" });
+          if (!r.ok) { lastErr = `HTTP ${r.status}`; continue; }
+          const j = await r.json() as { items?: WebGame[] };
+          if (j.items && j.items.length > 0) {
+            setItems(j.items);
+            return;
+          }
+          lastErr = "Empty list";
+        } catch (e) {
+          lastErr = (e as Error).message;
+        }
+        await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
+      }
+      setError(lastErr || "Could not load games.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void fetchGames(); }, [fetchGames]);
 
   const filtered = items.filter((g) => g.name.toLowerCase().includes(q.toLowerCase()));
 
@@ -83,6 +100,15 @@ export function WebGames() {
         {loading && (
           <div className="flex items-center justify-center gap-2 py-12 text-xs text-foreground/40">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> Fetching game library…
+          </div>
+        )}
+        {error && !loading && (
+          <div className="mx-auto my-12 max-w-sm rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-center text-xs text-red-300">
+            <div className="mb-2">Couldn't load games: {error}</div>
+            <button onClick={() => void fetchGames()}
+              className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-1 text-[11px] font-medium text-black hover:bg-white/90">
+              <RotateCw className="h-3 w-3" /> Retry
+            </button>
           </div>
         )}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">

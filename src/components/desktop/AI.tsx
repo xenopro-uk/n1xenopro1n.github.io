@@ -13,7 +13,7 @@ async function ask(prompt: string): Promise<string> {
 
 export function AI() {
   const [msgs, setMsgs] = useState<Msg[]>([
-    { role: "ai", text: "Hi — I'm Xeno AI. Ask me anything. Powered by a free public model." },
+    { role: "ai", text: "Hi — I'm Xeno AI. Ask me anything." },
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,7 +42,6 @@ export function AI() {
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
         <Sparkles className="h-4 w-4 text-accent" />
         <span className="text-sm font-medium">Xeno AI</span>
-        <span className="ml-auto text-[10px] uppercase tracking-wider text-foreground/40">Free · Public model</span>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
         <div className="mx-auto flex max-w-2xl flex-col gap-3">
