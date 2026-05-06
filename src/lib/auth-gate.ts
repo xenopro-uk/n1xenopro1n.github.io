@@ -9,8 +9,9 @@ const GUEST_KEY = "xenopro:guest";
 export const STUDENT_EMAIL = "xenopro";
 export const STUDENT_PASSWORD = "xenobestwebsite";
 
-export const DEV_EMAIL = "xenoprosites@krisgmail.com";
-export const DEV_PASSWORD = "xenoysenpai12290himbest";
+// Dev/admin credentials are NOT stored client-side. Sign in via the real
+// Supabase auth flow with your admin email/password — the database trigger
+// auto-grants the admin role to the configured admin email on first signup.
 
 export function isAuthed(): boolean {
   if (typeof window === "undefined") return false;
