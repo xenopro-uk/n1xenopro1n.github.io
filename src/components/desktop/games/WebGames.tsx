@@ -20,17 +20,34 @@ export function WebGames() {
   const [active, setActive] = useState<WebGame | null>(null);
   const [useProxy, setUseProxy] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const r = await fetch("/api/public/gn-math");
-        const j = await r.json() as { items?: WebGame[] };
-        if (alive) setItems(j.items ?? []);
-      } finally { if (alive) setLoading(false); }
-    })();
-    return () => { alive = false; };
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchGames = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      let lastErr: string | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const r = await fetch("/api/public/gn-math", { cache: "no-store" });
+          if (!r.ok) { lastErr = `HTTP ${r.status}`; continue; }
+          const j = await r.json() as { items?: WebGame[] };
+          if (j.items && j.items.length > 0) {
+            setItems(j.items);
+            return;
+          }
+          lastErr = "Empty list";
+        } catch (e) {
+          lastErr = (e as Error).message;
+        }
+        await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
+      }
+      setError(lastErr || "Could not load games.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void fetchGames(); }, [fetchGames]);
 
   const filtered = items.filter((g) => g.name.toLowerCase().includes(q.toLowerCase()));
 
