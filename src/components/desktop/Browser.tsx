@@ -184,13 +184,17 @@ export function Browser() {
 
 function StartPage({ onPick }: { onPick: (url: string) => void }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-10 overflow-y-auto px-6 py-12 scrollbar-thin">
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-black">
-          <Globe className="h-8 w-8" strokeWidth={1.8} />
-        </div>
-        <h1 className="text-4xl font-bold tracking-tight">Xeno Proxy</h1>
-        <p className="max-w-md text-center text-sm text-foreground/60">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-10 overflow-y-auto bg-black px-6 py-12 scrollbar-thin">
+      <div className="flex flex-col items-center gap-4">
+        <img
+          src="https://i.pinimg.com/originals/ca/fd/de/cafddef932d6383786c3e2b293b6a341.jpg"
+          alt=""
+          className="h-40 w-40 rounded-2xl object-cover ring-2 ring-white/15 shadow-[0_0_60px_rgba(255,255,255,0.05)]"
+          referrerPolicy="no-referrer"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+        />
+        <h1 className="text-4xl font-bold tracking-tight text-white">Xeno Proxy</h1>
+        <p className="max-w-md text-center text-sm text-white/60">
           Routed through a stack of unblocked proxy relays. Pick any provider above — if one is blocked, hit "Try next."
         </p>
       </div>
