@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Globe, Gamepad2, Sparkles, Newspaper,
   Settings as SettingsIcon, Film, Music, Calculator as CalcIcon,
-  LogOut, Shield, type LucideIcon,
+  LogOut, Shield, MessageSquare, type LucideIcon,
 } from "lucide-react";
 import { AppIcon } from "@/components/desktop/AppIcon";
 import { Window } from "@/components/desktop/Window";
