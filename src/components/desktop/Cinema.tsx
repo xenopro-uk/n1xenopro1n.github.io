@@ -30,6 +30,19 @@ const SOURCES = [
   { id: "multiembed", movie: (id: number) => `https://multiembed.mov/?video_id=${id}&tmdb=1`, tv: (id: number) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=1&e=1` },
 ];
 
+interface Category { id: string; label: string; url: string }
+const CATEGORIES: Category[] = [
+  { id: "trending", label: "Trending", url: `https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_KEY}` },
+  { id: "top_movies", label: "Top Rated Movies", url: `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_KEY}&page=1` },
+  { id: "top_tv", label: "Top Rated Shows", url: `https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_KEY}&page=1` },
+  { id: "popular_tv", label: "Popular Shows", url: `https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_KEY}&page=1` },
+  { id: "action", label: "Action", url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=28&sort_by=popularity.desc` },
+  { id: "comedy", label: "Comedy", url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=35&sort_by=popularity.desc` },
+  { id: "horror", label: "Horror", url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=27&sort_by=popularity.desc` },
+  { id: "scifi", label: "Sci-Fi", url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=878&sort_by=popularity.desc` },
+  { id: "anime", label: "Anime", url: `https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&with_genres=16&with_original_language=ja&sort_by=popularity.desc` },
+];
+
 export function Cinema() {
   const { user } = useAccount();
   const [q, setQ] = useState("");
@@ -40,19 +53,36 @@ export function Cinema() {
   const [warned, setWarned] = useState(() =>
     typeof window !== "undefined" && localStorage.getItem(WARN_KEY) === "ok");
   const [recent, setRecent] = useState<TmdbItem[]>([]);
+  const [category, setCategory] = useState<string>("trending");
+  const [rails, setRails] = useState<Record<string, TmdbItem[]>>({});
 
-  // Load combined trending (movies + tv) on mount
+  // Load all category rails on mount
   useEffect(() => {
     if (!warned) return;
     let alive = true;
     (async () => {
       setLoading(true);
       try {
-        const r = await fetch(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_KEY}`);
-        const j = await r.json();
-        const list: TmdbItem[] = (j.results ?? []).filter((x: TmdbItem) =>
-          x.media_type === "movie" || x.media_type === "tv");
-        if (alive) setItems(list);
+        const results = await Promise.all(
+          CATEGORIES.map(async (c) => {
+            try {
+              const r = await fetch(c.url);
+              const j = await r.json();
+              const list: TmdbItem[] = (j.results ?? []).map((x: TmdbItem) => ({
+                ...x,
+                media_type: x.media_type ?? (x.first_air_date ? "tv" : "movie"),
+              }));
+              return [c.id, list] as const;
+            } catch {
+              return [c.id, []] as const;
+            }
+          }),
+        );
+        if (!alive) return;
+        const map: Record<string, TmdbItem[]> = {};
+        for (const [k, v] of results) map[k] = v;
+        setRails(map);
+        setItems(map["trending"] ?? []);
       } finally { if (alive) setLoading(false); }
     })();
     return () => { alive = false; };
