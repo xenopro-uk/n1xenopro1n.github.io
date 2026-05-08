@@ -92,7 +92,7 @@ export function Browser() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-background/40">
+    <div className="flex h-full w-full flex-col bg-black">
       {/* Tab strip */}
       <div className="flex items-end gap-1 border-b border-white/10 bg-black/30 px-2 pt-2">
         {tabs.map((t) => (
