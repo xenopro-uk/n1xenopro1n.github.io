@@ -72,9 +72,9 @@ export function Cinema() {
                 ...x,
                 media_type: x.media_type ?? (x.first_air_date ? "tv" : "movie"),
               }));
-              return [c.id, list] as const;
+              return [c.id, list] as [string, TmdbItem[]];
             } catch {
-              return [c.id, []] as const;
+              return [c.id, [] as TmdbItem[]] as [string, TmdbItem[]];
             }
           }),
         );
