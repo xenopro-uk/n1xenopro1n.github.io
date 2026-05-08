@@ -139,7 +139,7 @@ export const Route = createFileRoute("/api/public/proxy")({
         const sameOrigin =
           (origin && new URL(origin).host === reqUrl.host) ||
           (referer && new URL(referer).host === reqUrl.host) ||
-          sec === "same-origin" || sec === "same-site";
+          sec === "same-origin" || sec === "same-site" || sec === "none";
         if (!sameOrigin) {
           return new Response("Forbidden", { status: 403, headers: CORS });
         }
