@@ -18,7 +18,7 @@ export function WebGames() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [active, setActive] = useState<WebGame | null>(null);
-  const [useProxy, setUseProxy] = useState(true);
+  const [useProxy, setUseProxy] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -116,11 +116,17 @@ export function WebGames() {
             <button key={g.id}
               onClick={() => { setActive(g); void logActivity("game.open", g.id, { name: g.name, source: "gn-math" }); }}
               className="group flex flex-col overflow-hidden rounded-xl bg-white/[0.04] text-left ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:bg-white/10 hover:ring-white/20">
-              <div className="flex aspect-video w-full items-center justify-center"
+              <div className="flex aspect-video w-full items-center justify-center overflow-hidden"
                 style={{ background: cardGradient(g.id) }}>
-                {g.thumb ? <img src={g.thumb} alt="" className="h-full w-full object-cover opacity-90" loading="lazy" /> : <span className="text-3xl font-black tracking-tighter text-white/85">
-                  {g.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase()}
-                </span>}
+                {g.thumb ? (
+                  <img src={g.thumb} alt="" className="h-full w-full object-cover"
+                    loading="lazy"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                ) : (
+                  <span className="text-3xl font-black tracking-tighter text-white/85">
+                    {g.name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div className="flex flex-1 flex-col gap-0.5 p-2">
                 <span className="line-clamp-1 text-xs font-medium">{g.name}</span>

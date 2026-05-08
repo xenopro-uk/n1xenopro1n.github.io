@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Globe, Gamepad2, Sparkles, Newspaper,
   Settings as SettingsIcon, Film, Music, Calculator as CalcIcon,
-  LogOut, Shield, type LucideIcon,
+  LogOut, Shield, MessageSquare, type LucideIcon,
 } from "lucide-react";
 import { AppIcon } from "@/components/desktop/AppIcon";
 import { Window } from "@/components/desktop/Window";
@@ -18,6 +18,7 @@ import { Settings } from "@/components/desktop/Settings";
 import { Calculator } from "@/components/desktop/Calculator";
 import { MusicApp } from "@/components/desktop/MusicApp";
 import { AdminPanel } from "@/components/desktop/AdminPanel";
+import { Messenger } from "@/components/desktop/Messenger";
 import { AccountMenu } from "@/components/desktop/AccountMenu";
 import { BroadcastBanner } from "@/components/desktop/BroadcastBanner";
 import { HUD } from "@/components/desktop/HUD";
@@ -42,19 +43,20 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "admin";
+type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "messenger" | "admin";
 interface AppDef { id: AppId; label: string; icon: LucideIcon; adminOnly?: boolean }
 
 const APPS: AppDef[] = [
-  { id: "browser",  label: "Xeno's Proxy",    icon: Globe },
-  { id: "ai",       label: "Xeno's AI",       icon: Sparkles },
-  { id: "games",    label: "Games",           icon: Gamepad2 },
-  { id: "cinema",   label: "Xeno's Cinema",   icon: Film },
-  { id: "music",    label: "Xeno's Sonic",    icon: Music },
-  { id: "news",     label: "Xeno's Wire",     icon: Newspaper },
-  { id: "calc",     label: "Xeno's Calc",     icon: CalcIcon },
-  { id: "settings", label: "Xeno's Cloak",    icon: SettingsIcon },
-  { id: "admin",    label: "Xeno's Dev",      icon: Shield, adminOnly: true },
+  { id: "browser",   label: "Xeno's Proxy",     icon: Globe },
+  { id: "ai",        label: "Xeno's AI",        icon: Sparkles },
+  { id: "games",     label: "Games",            icon: Gamepad2 },
+  { id: "cinema",    label: "Xeno's Cinema",    icon: Film },
+  { id: "music",     label: "Xeno's Sonic",     icon: Music },
+  { id: "messenger", label: "Xeno's Messenger", icon: MessageSquare },
+  { id: "news",      label: "Xeno's Wire",      icon: Newspaper },
+  { id: "calc",      label: "Xeno's Calc",      icon: CalcIcon },
+  { id: "settings",  label: "Xeno's Cloak",     icon: SettingsIcon },
+  { id: "admin",     label: "Xeno's Dev",       icon: Shield, adminOnly: true },
 ];
 
 // Grid (iPhone-style snap)
@@ -313,6 +315,7 @@ function Desktop() {
           {openApp === "news" && <News />}
           {openApp === "music" && <MusicApp />}
           {openApp === "calc" && <Calculator />}
+          {openApp === "messenger" && <Messenger />}
           {openApp === "settings" && <Settings initialTab={settingsTab} />}
           {openApp === "admin" && <AdminPanel />}
         </Window>

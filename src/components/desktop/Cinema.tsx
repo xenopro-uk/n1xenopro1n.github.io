@@ -30,6 +30,19 @@ const SOURCES = [
   { id: "multiembed", movie: (id: number) => `https://multiembed.mov/?video_id=${id}&tmdb=1`, tv: (id: number) => `https://multiembed.mov/?video_id=${id}&tmdb=1&s=1&e=1` },
 ];
 
+interface Category { id: string; label: string; url: string }
+const CATEGORIES: Category[] = [
+  { id: "trending", label: "Trending", url: `https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_KEY}` },
+  { id: "top_movies", label: "Top Rated Movies", url: `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_KEY}&page=1` },
+  { id: "top_tv", label: "Top Rated Shows", url: `https://api.themoviedb.org/3/tv/top_rated?api_key=${TMDB_KEY}&page=1` },
+  { id: "popular_tv", label: "Popular Shows", url: `https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_KEY}&page=1` },
+  { id: "action", label: "Action", url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=28&sort_by=popularity.desc` },
+  { id: "comedy", label: "Comedy", url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=35&sort_by=popularity.desc` },
+  { id: "horror", label: "Horror", url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=27&sort_by=popularity.desc` },
+  { id: "scifi", label: "Sci-Fi", url: `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_KEY}&with_genres=878&sort_by=popularity.desc` },
+  { id: "anime", label: "Anime", url: `https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_KEY}&with_genres=16&with_original_language=ja&sort_by=popularity.desc` },
+];
+
 export function Cinema() {
   const { user } = useAccount();
   const [q, setQ] = useState("");
@@ -40,19 +53,36 @@ export function Cinema() {
   const [warned, setWarned] = useState(() =>
     typeof window !== "undefined" && localStorage.getItem(WARN_KEY) === "ok");
   const [recent, setRecent] = useState<TmdbItem[]>([]);
+  const [category, setCategory] = useState<string>("trending");
+  const [rails, setRails] = useState<Record<string, TmdbItem[]>>({});
 
-  // Load combined trending (movies + tv) on mount
+  // Load all category rails on mount
   useEffect(() => {
     if (!warned) return;
     let alive = true;
     (async () => {
       setLoading(true);
       try {
-        const r = await fetch(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_KEY}`);
-        const j = await r.json();
-        const list: TmdbItem[] = (j.results ?? []).filter((x: TmdbItem) =>
-          x.media_type === "movie" || x.media_type === "tv");
-        if (alive) setItems(list);
+        const results = await Promise.all(
+          CATEGORIES.map(async (c) => {
+            try {
+              const r = await fetch(c.url);
+              const j = await r.json();
+              const list: TmdbItem[] = (j.results ?? []).map((x: TmdbItem) => ({
+                ...x,
+                media_type: x.media_type ?? (x.first_air_date ? "tv" : "movie"),
+              }));
+              return [c.id, list] as [string, TmdbItem[]];
+            } catch {
+              return [c.id, [] as TmdbItem[]] as [string, TmdbItem[]];
+            }
+          }),
+        );
+        if (!alive) return;
+        const map: Record<string, TmdbItem[]> = {};
+        for (const [k, v] of results) map[k] = v;
+        setRails(map);
+        setItems(map["trending"] ?? []);
       } finally { if (alive) setLoading(false); }
     })();
     return () => { alive = false; };
@@ -171,6 +201,8 @@ export function Cinema() {
   const featured = items[0];
   const rest = items.slice(1);
 
+  const isSearchView = items !== rails[category];
+
   return (
     <div className="flex h-full flex-col bg-black text-white">
       <div className="flex items-center gap-3 border-b border-white/5 bg-black/80 px-5 py-3 backdrop-blur">
@@ -183,9 +215,23 @@ export function Cinema() {
         </form>
       </div>
 
+      {/* Category strip */}
+      <div className="flex gap-2 overflow-x-auto border-b border-white/5 bg-black/50 px-5 py-2 scrollbar-thin">
+        {CATEGORIES.map((c) => (
+          <button key={c.id} onClick={() => { setCategory(c.id); setItems(rails[c.id] ?? []); }}
+            className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition ${
+              category === c.id && !isSearchView
+                ? "bg-white text-black"
+                : "bg-white/5 text-white/60 ring-1 ring-white/10 hover:bg-white/10 hover:text-white"
+            }`}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {loading && items.length === 0 && (
-          <div className="grid h-full place-items-center text-xs text-white/40">Loading trending…</div>
+          <div className="grid h-full place-items-center text-xs text-white/40">Loading…</div>
         )}
 
         {featured && (
@@ -214,10 +260,22 @@ export function Cinema() {
               {recent.map((it) => <Poster key={`r-${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
             </Rail>
           )}
-          {rest.length > 0 && (
-            <Rail title="Trending this week">
-              {rest.map((it) => <Poster key={`${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
-            </Rail>
+          {isSearchView ? (
+            rest.length > 0 && (
+              <Rail title={`Search results`}>
+                {rest.map((it) => <Poster key={`s-${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
+              </Rail>
+            )
+          ) : (
+            CATEGORIES.map((c) => {
+              const list = rails[c.id] ?? [];
+              if (list.length <= 1) return null;
+              return (
+                <Rail key={c.id} title={c.label}>
+                  {list.map((it) => <Poster key={`${c.id}-${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
+                </Rail>
+              );
+            })
           )}
         </div>
       </div>
