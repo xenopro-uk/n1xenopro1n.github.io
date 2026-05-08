@@ -43,19 +43,20 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "admin";
+type AppId = "browser" | "ai" | "games" | "news" | "settings" | "cinema" | "music" | "calc" | "messenger" | "admin";
 interface AppDef { id: AppId; label: string; icon: LucideIcon; adminOnly?: boolean }
 
 const APPS: AppDef[] = [
-  { id: "browser",  label: "Xeno's Proxy",    icon: Globe },
-  { id: "ai",       label: "Xeno's AI",       icon: Sparkles },
-  { id: "games",    label: "Games",           icon: Gamepad2 },
-  { id: "cinema",   label: "Xeno's Cinema",   icon: Film },
-  { id: "music",    label: "Xeno's Sonic",    icon: Music },
-  { id: "news",     label: "Xeno's Wire",     icon: Newspaper },
-  { id: "calc",     label: "Xeno's Calc",     icon: CalcIcon },
-  { id: "settings", label: "Xeno's Cloak",    icon: SettingsIcon },
-  { id: "admin",    label: "Xeno's Dev",      icon: Shield, adminOnly: true },
+  { id: "browser",   label: "Xeno's Proxy",     icon: Globe },
+  { id: "ai",        label: "Xeno's AI",        icon: Sparkles },
+  { id: "games",     label: "Games",            icon: Gamepad2 },
+  { id: "cinema",    label: "Xeno's Cinema",    icon: Film },
+  { id: "music",     label: "Xeno's Sonic",     icon: Music },
+  { id: "messenger", label: "Xeno's Messenger", icon: MessageSquare },
+  { id: "news",      label: "Xeno's Wire",      icon: Newspaper },
+  { id: "calc",      label: "Xeno's Calc",      icon: CalcIcon },
+  { id: "settings",  label: "Xeno's Cloak",     icon: SettingsIcon },
+  { id: "admin",     label: "Xeno's Dev",       icon: Shield, adminOnly: true },
 ];
 
 // Grid (iPhone-style snap)
