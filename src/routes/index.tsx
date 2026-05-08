@@ -18,6 +18,7 @@ import { Settings } from "@/components/desktop/Settings";
 import { Calculator } from "@/components/desktop/Calculator";
 import { MusicApp } from "@/components/desktop/MusicApp";
 import { AdminPanel } from "@/components/desktop/AdminPanel";
+import { Messenger } from "@/components/desktop/Messenger";
 import { AccountMenu } from "@/components/desktop/AccountMenu";
 import { BroadcastBanner } from "@/components/desktop/BroadcastBanner";
 import { HUD } from "@/components/desktop/HUD";
