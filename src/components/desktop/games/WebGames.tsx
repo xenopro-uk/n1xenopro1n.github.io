@@ -18,7 +18,7 @@ export function WebGames() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [active, setActive] = useState<WebGame | null>(null);
-  const [useProxy, setUseProxy] = useState(true);
+  const [useProxy, setUseProxy] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
