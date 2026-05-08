@@ -131,6 +131,18 @@ export const Route = createFileRoute("/api/public/proxy")({
             headers: { ...CORS, "content-type": "application/json", "cache-control": "no-store" },
           });
         }
+        // Same-origin guard: only allow this app's pages to use the proxy.
+        // External callers (referer/origin from a different host) are rejected.
+        const origin = request.headers.get("origin");
+        const referer = request.headers.get("referer");
+        const sec = request.headers.get("sec-fetch-site");
+        const sameOrigin =
+          (origin && new URL(origin).host === reqUrl.host) ||
+          (referer && new URL(referer).host === reqUrl.host) ||
+          sec === "same-origin" || sec === "same-site";
+        if (!sameOrigin) {
+          return new Response("Forbidden", { status: 403, headers: CORS });
+        }
         const target = reqUrl.searchParams.get("url");
         if (!target) {
           return new Response("Missing ?url=", { status: 400, headers: CORS });
