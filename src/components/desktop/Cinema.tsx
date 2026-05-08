@@ -201,6 +201,8 @@ export function Cinema() {
   const featured = items[0];
   const rest = items.slice(1);
 
+  const isSearchView = items !== rails[category];
+
   return (
     <div className="flex h-full flex-col bg-black text-white">
       <div className="flex items-center gap-3 border-b border-white/5 bg-black/80 px-5 py-3 backdrop-blur">
@@ -213,9 +215,23 @@ export function Cinema() {
         </form>
       </div>
 
+      {/* Category strip */}
+      <div className="flex gap-2 overflow-x-auto border-b border-white/5 bg-black/50 px-5 py-2 scrollbar-thin">
+        {CATEGORIES.map((c) => (
+          <button key={c.id} onClick={() => { setCategory(c.id); setItems(rails[c.id] ?? []); }}
+            className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium transition ${
+              category === c.id && !isSearchView
+                ? "bg-white text-black"
+                : "bg-white/5 text-white/60 ring-1 ring-white/10 hover:bg-white/10 hover:text-white"
+            }`}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {loading && items.length === 0 && (
-          <div className="grid h-full place-items-center text-xs text-white/40">Loading trending…</div>
+          <div className="grid h-full place-items-center text-xs text-white/40">Loading…</div>
         )}
 
         {featured && (
@@ -244,10 +260,22 @@ export function Cinema() {
               {recent.map((it) => <Poster key={`r-${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
             </Rail>
           )}
-          {rest.length > 0 && (
-            <Rail title="Trending this week">
-              {rest.map((it) => <Poster key={`${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
-            </Rail>
+          {isSearchView ? (
+            rest.length > 0 && (
+              <Rail title={`Search results`}>
+                {rest.map((it) => <Poster key={`s-${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
+              </Rail>
+            )
+          ) : (
+            CATEGORIES.map((c) => {
+              const list = rails[c.id] ?? [];
+              if (list.length <= 1) return null;
+              return (
+                <Rail key={c.id} title={c.label}>
+                  {list.map((it) => <Poster key={`${c.id}-${it.media_type}-${it.id}`} item={it} onClick={() => setActive(it)} />)}
+                </Rail>
+              );
+            })
           )}
         </div>
       </div>
